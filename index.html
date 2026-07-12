@@ -247,9 +247,24 @@ function convertYoutubeEmbed(url){
     config.musicList.forEach(url => fullMusic.innerHTML += `<iframe class="youtube-frame" src="${convertYoutubeEmbed(url)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="margin-bottom:18px;"></iframe>`);
 
     function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
+
+    document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active');
+    });
+
+    document.getElementById(pageId).classList.add('active');
+
+    const chatBtn = document.getElementById("chat-toggle-btn");
+    const chatWin = document.getElementById("chat-window");
+
+    if(pageId === "home"){
+        chatBtn.style.display = "block";
+    }else{
+        chatBtn.style.display = "none";
+        chatWin.style.display = "none";
     }
+
+}
 </script>
 </body>
 </html>
