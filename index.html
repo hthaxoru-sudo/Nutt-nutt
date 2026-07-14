@@ -69,6 +69,47 @@
         #chat-window { display: none; position: fixed; bottom: 90px; right: 20px; width: 300px; max-width: 85%; height: 400px; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 9998; flex-direction: column; overflow: hidden; border: none; }
         .youtube-frame { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: 20px; background: #000; }
     </style>
+
+<style>
+body{transition:background 1s;}
+#statsBox{
+    margin:15px auto;
+    background:rgba(30,30,30,.85);
+    padding:10px 18px;
+    border-radius:14px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:15px;
+    color:white;
+    font-family:'Kanit',sans-serif;
+    font-size:14px;
+    max-width:90%;
+    backdrop-filter:blur(10px);
+}
+
+.stat-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    white-space:nowrap;
+}
+
+.stat-item i{
+    font-size:18px;
+    color:#d1d5db;
+}
+
+.stat-line{
+    width:1px;
+    height:25px;
+    background:rgba(255,255,255,.25);
+}
+
+.online i{
+    color:#22c55e;
+}
+</style>
 </head>
 <body>
 
@@ -79,7 +120,22 @@
         
         <img id="profile-img" src="" class="profile-pic">
         <h1>NUTT</h1>
-        <p>IT Student | ดูแลคุณได้มากกว่าคอมพิวเตอร์</p>
+<p>IT Student | ดูแลคุณได้มากกว่าคอมพิวเตอร์</p>
+
+<div id="statsBox">
+    <div class="stat-item">
+        <i class="fa-solid fa-eye"></i>
+        <span id="views">12,548 ครั้ง</span>
+    </div>
+
+    <div class="stat-line"></div>
+
+    <div class="stat-item online">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="online">7 คนออนไลน์</span>
+    </div>
+</div>
+
 
         <div class="social-container" id="socialLinks"></div>
 
@@ -127,6 +183,7 @@
         hobbies: [
             { name: "ดูอนิเมะ", show: true },
             { name: "เล่นเกม", show: true },
+            { name: "ถ่ายรูป", show: true },
             { name: "ดู YouTube", show: true },
             { name: "ดู IG", show: true },
             { name: "อยู่ในดิสคอร์ด", show: true }
@@ -146,13 +203,13 @@
             { url: "https://open.spotify.com/user/317tsqx2bfvb34z2xcw7jouksxua", iconClass: "fab fa-spotify", color: "#1DB954" },
             { url: "https://www.tiktok.com/@nuttsume_chan", iconClass: "fab fa-tiktok", color: "#000000" }
         ],
-        webhookUrl: "ใส่_WEBHOOK_URL_ของ_GOOGLE_CHAT_ที่นี่"
+        webhookUrl: "https://discord.com/api/webhooks/1525852496080404510/wTRd5yaktwBNbXgVbSUTegOO1IrswczuOMrnfx8N5FmkJQstyti7RUPsjgckOelpD7gU"
     };
 
     const chatData = {
-        "โสดไหม?": { a: "โสดครับ! แถมนิสัยขี้อ้อนด้วยนะ... สนใจมาดูแลนัตหน่อยไหมครับ? อิอิ 😜" },
-        "ช่องทางติดต่อ": { a: "อยากติดต่อทางไหนดีครับ? เลือกด้านล่างได้เลย!", options: ["IG", "Discord"] },
-        "แนะนำตัวหน่อย?": {
+
+    // 1. แนะนำตัว
+    "แนะนำตัวหน่อย?": {
         a: `<b>สวัสดีครับ ผมขอแนะนำตัวนะครับ!</b><br><br>
             • <b>ชื่อเล่น:</b> นัต<br>
             • <b>อายุ:</b> 22 ปี<br>
@@ -161,11 +218,55 @@
             • <b>สถานะหัวใจ:</b> โสด 1000%<br>
             • <b>รูปร่าง:</b> หุ่นหมี 🐻<br><br>
             <b>นิสัยส่วนตัว:</b><br>
-            เป็นคนคุยไม่เก่งเท่าไหร่ แต่ถ้าได้ลองเปิดใจจะรู้ว่าเป็นคนรักจริงนะครับ! ปกตินัตเป็นคนติดเล่นและขี้แกล้งสุดๆ แต่ถ้าถึงเวลาต้องจริงจังขึ้นมา นัตก็โฟกัสเต็มที่ ส่วนนิสัยลึกๆ เป็นคนขี้อ้อน ขี้หึงขี้หวงหน่อยๆ และชอบให้คนใกล้ตัวอยู่ด้วยตลอดเวลา แม้บางครั้งอาจจะคิดมากไปบ้าง แต่ถ้าได้รู้จักกันจริงๆ รับรองว่าอบอุ่นแน่นอนครับ!`,
-        next: "อยากให้ผมแนะนำส่วนไหนเพิ่มเติมอีกไหมครับ?"
-        },
-        "ทำอะไรอยู่?": { a: "กำลังนั่งปั่นโปรเจกต์กับฟังเพลงชิลๆ ครับ... สนใจทักมาแกล้งกันได้ที่ IG นะครับ" }
-    };
+            เป็นคนคุยไม่เก่งเท่าไหร่ แต่ถ้าได้ลองเปิดใจจะรู้ว่าเป็นคนรักจริงนะครับ! ปกตินัตเป็นคนติดเล่นและขี้แกล้งสุด ๆ แต่ถ้าถึงเวลาต้องจริงจัง นัตก็โฟกัสเต็มที่ ส่วนนิสัยลึก ๆ เป็นคนขี้อ้อน ขี้หึงขี้หวงนิดหน่อย และชอบใช้เวลากับคนที่สนิทครับ 😊`
+    },
+
+    // 2. ทำอะไรอยู่
+    "ทำอะไรอยู่?": {
+        a: "ช่วงนี้กำลังนั่งปั่นโปรเจกต์กับฟังเพลงชิล ๆ ครับ 😆 แต่ถ้ามีคนทักมา นัตก็ตอบเรื่อย ๆ นะ"
+    },
+
+    // 3. ช่องทางติดต่อ
+    "ช่องทางติดต่อ": {
+        a: "เลือกช่องทางที่สะดวกได้เลยครับ 😊",
+        options: ["IG", "Discord"]
+    },
+
+    // 4. โสดไหม
+    "โสดไหม?": {
+        a: "โสดครับ 😆 ถ้าอยากรู้จักกันมากขึ้น ลองคุยกันก่อนได้นะ"
+    }
+
+};
+    function sendToDiscord(userMessage, botReply) {
+    const ua = navigator.userAgent;
+    const screenRes = `${window.screen.width} x ${window.screen.height}`;
+    const language = navigator.language;
+    const platform = navigator.platform;
+
+    // ใช้การดึง Browser แบบแยกชื่อ
+    const browser = (ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [])[0] || "Unknown Browser";
+
+    fetch(config.webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            embeds: [{
+                title: "💬 มีข้อความใหม่จากเว็บไซต์",
+                color: 5865492, // สีโทนเขียว-น้ำเงิน ดูสบายตา
+                fields: [
+                    { name: "👤 คำถามจากผู้ใช้", value: `>>> ${userMessage}`, inline: false },
+                    { name: "🤖 นัต (AI) ตอบกลับ", value: `>>> ${botReply.replace(/<[^>]*>?/gm, '')}`, inline: false },
+                    { name: "💻 ข้อมูลอุปกรณ์และสเปค", value: `**ระบบปฏิบัติการ:** ${platform}\n**เบราว์เซอร์:** ${browser}\n**ความละเอียดจอ:** ${screenRes}\n**ภาษาที่ใช้:** ${language}`, inline: false }
+                ],
+                footer: { 
+                    text: "ระบบแจ้งเตือนอัตโนมัติ • ข้อมูลจำกัดเนื่องจากข้อกำหนดความเป็นส่วนตัว" 
+                },
+                timestamp: new Date() // เพิ่มเวลาที่ส่งข้อความจริง
+            }]
+        })
+    }).catch(err => console.error("Discord Error:", err));
+}
 
     const choiceContainer = document.getElementById('chat-choices');
     const msgDiv = document.getElementById('chat-messages');
@@ -203,6 +304,7 @@
         setTimeout(() => {
             msgDiv.innerHTML += `<div style="margin-bottom:10px;"><b>AI:</b> ${reply}</div>`;
             msgDiv.scrollTop = msgDiv.scrollHeight;
+            sendToDiscord(choice, reply); // เรียกใช้งานส่งข้อความไป Discord
         }, 300);
     }
 
@@ -253,6 +355,20 @@
         chatBtn.style.display = (pageId === "home") ? "block" : "none";
         chatWin.style.display = "none";
     }
+</script>
+
+
+<script>
+(function(){
+const h=new Date().getHours();
+const b=document.body;
+if(h<5||h>=19)b.style.background="linear-gradient(135deg,#0f172a,#312e81)";
+else if(h<11)b.style.background="linear-gradient(135deg,#87ceeb,#fff7b2)";
+else if(h<17)b.style.background="linear-gradient(135deg,#7dd3fc,#ffffff)";
+else b.style.background="linear-gradient(135deg,#fb923c,#c084fc)";
+document.getElementById('views').textContent='ต้องใช้ Backend';
+document.getElementById('online').textContent='ต้องใช้ Backend';
+})();
 </script>
 </body>
 </html>
