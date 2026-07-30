@@ -1,27 +1,27 @@
-// accounts.js - ข้อมูลจำลองและระบบจัดการบัญชี
+// accounts.js - รองรับพนักงานและแอดมินหลายคน
 
 const MockAccounts = {
-    // ฝั่งพนักงาน
+    // รายชื่อพนักงานครัวทั้งหมด
     staff: [
-        { username: "somchai", password: "123", name: "Somchai", role: "พ่อครัว" },
-        { username: "alice", password: "123", name: "Alice", role: "แม่ครัว" }
+        { id: "somchai", password: "123", name: "สมชาย (พ่อครัว)", role: "พ่อครัว" },
+        { id: "alice", password: "456", name: "อลิซ (แม่ครัว)", role: "แม่ครัว" },
+        { id: "pracha", password: "789", name: "ประชา (ผู้ช่วยกุ๊ก)", role: "ผู้ช่วย" }
     ],
-    // ฝั่งแอดมิน
-    admin: {
-        username: "admin",
-        password: "123"
-    }
+    // รายชื่อแอดมินทั้งหมด
+    admin: [
+        { id: "admin_boss", password: "admin123", name: "คุณบอส (เจ้าของร้าน)", role: "Admin" },
+        { id: "admin_manager", password: "manager123", name: "คุณจัดการ (ผู้จัดการ)", role: "Admin" }
+    ]
 };
 
-// ข้อมูลสถานะการเปิดดูออเดอร์ (ป้องกันพนักงานทำงานซ้ำกัน)
 let activeStaffViewing = {}; 
 
-// ฟังก์ชันตรวจสอบสิทธิ์พนักงาน
-function authenticateStaff(username, password) {
-    return MockAccounts.staff.find(s => s.username === username && s.password === password);
+// ฟังก์ชันตรวจสอบสิทธิ์พนักงาน (เช็คจากชื่อที่เลือก และ Password)
+function authenticateStaff(selectedId, password) {
+    return MockAccounts.staff.find(s => s.id === selectedId && s.password === password);
 }
 
-// ฟังก์ชันตรวจสอบสิทธิ์แอดมิน
-function authenticateAdmin(username, password) {
-    return MockAccounts.admin.username === username && MockAccounts.admin.password === password;
+// ฟังก์ชันตรวจสอบสิทธิ์แอดมิน (เช็คจากชื่อที่เลือก และ Password)
+function authenticateAdmin(selectedId, password) {
+    return MockAccounts.admin.find(a => a.id === selectedId && a.password === password);
 }
