@@ -2,396 +2,518 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NUTT's Portfolio</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌶️ Somtum-Shop Mobile</title>
+    <script src="accounts.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --bg-color: #e0f2fe; 
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --accent-color: #4f46e5;
+        :root {
+            --primary: #ff4757;
+            --primary-gradient: linear-gradient(135deg, #ff4757, #ff6b81);
+            --secondary: #2ed573;
+            --dark: #2f3542;
+            --bg-color: #f1f2f6;
+            --white: #ffffff;
+            --gray: #dfe4ea;
+            --radius: 20px;
         }
+
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            font-family: 'Kanit', sans-serif; 
-            background: var(--bg-color); 
-            margin: 0; 
-            padding: 15px; 
-            display: flex; 
-            justify-content: center; 
+            background-color: #2f3542; 
+            color: var(--dark); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
+            margin: 0;
         }
-        
-        .container { 
+
+        .phone-frame {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 850px;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        @media (min-width: 421px) {
+            .phone-frame {
+                border-radius: 40px;
+                border: 10px solid #1e272e;
+            }
+        }
+
+        header { 
+            background: var(--primary-gradient); 
+            color: white; 
+            padding: 16px 20px; 
+            text-align: center; 
+            font-size: 18px; 
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.2);
+            flex-shrink: 0;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 90px;
+        }
+
+        .section { display: none; }
+        .section.active-section { display: block; animation: fadeIn 0.25s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        nav { 
+            display: flex; 
+            justify-content: space-around; 
+            background: var(--white); 
+            padding: 10px 0; 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
             width: 100%; 
-            max-width: 450px; 
-            background: var(--card-bg); 
-            backdrop-filter: blur(15px); 
-            padding: 25px; 
-            border-radius: 30px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.08); 
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.05); 
+            border-top: 1px solid var(--gray);
+            z-index: 1000;
         }
-
-        @keyframes breathing { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
-        
-        .profile-pic { 
-            width: 140px; 
-            height: 140px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-            border: 5px solid #fff; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin: 15px 0; 
-            animation: breathing 4s ease-in-out infinite;
+        nav button { 
+            background: transparent; 
+            border: none; 
+            color: #747d8c; 
+            font-size: 11px; 
+            font-weight: 500; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 3px; 
+            cursor: pointer;
+            flex: 1;
         }
+        nav button span { font-size: 18px; }
+        nav button.active { color: var(--primary); font-weight: 700; }
 
-        h1 { margin: 10px 0 5px; font-size: 1.8rem; color: #1e293b; }
-        p { color: #64748b; font-size: 0.95rem; margin-bottom: 20px; }
+        .card { background: var(--white); padding: 16px; border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 14px; }
+        h2, h3 { font-size: 16px; margin-bottom: 12px; color: var(--dark); font-weight: 600; }
+        label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #57606f; }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px 14px; 
+            margin-bottom: 12px; 
+            border: 1px solid var(--gray); 
+            border-radius: 12px; 
+            font-size: 14px; 
+            outline: none; 
+            background: #fff; 
+        }
+        input:focus, select:focus { border-color: var(--primary); }
 
-        .page { display: none; } 
-        .active { display: block; }
-        
-        .btn { padding: 12px 20px; cursor: pointer; border-radius: 50px; border: none; background: var(--accent-color); color: white; margin: 10px 0; width: 100%; font-weight: bold; transition: 0.3s; }
-        .btn:hover { transform: translateY(-3px); background: #4338ca; }
-        
-        .mini-btn { font-size: 13px; padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 50px; cursor: pointer; margin-top: 10px; color: #475569; transition: 0.3s; }
-        
-        .social-container { display: flex; justify-content: center; gap: 25px; margin: 20px 0; flex-wrap: wrap; }
-        .social-btn { font-size: 28px; opacity: 0.8; transition: 0.3s; }
-        .social-btn:hover { transform: scale(1.2); opacity: 1; }
-        
-        .status-dot { height: 10px; width: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        #greeting { font-weight: bold; color: var(--accent-color); margin-bottom: 5px; font-size: 1.1rem; }
+        .btn { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: 600; 
+            width: 100%; 
+            text-align: center; 
+            box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25); 
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary { background: #747d8c; box-shadow: none; }
 
-        /* Chat Widget Style */
-        #chat-window { display: none; position: fixed; bottom: 90px; right: 20px; width: 300px; max-width: 85%; height: 400px; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 9998; flex-direction: column; overflow: hidden; border: none; }
-        .youtube-frame { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: 20px; background: #000; }
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+        .menu-card { background: white; border: 1px solid var(--gray); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; }
+        .menu-icon { font-size: 28px; text-align: center; margin: 4px 0; }
+        .menu-title { font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 2px; }
+        .menu-price { color: var(--primary); font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+        .menu-card select, .menu-card input { padding: 8px; font-size: 11px; margin-bottom: 6px; }
+        .menu-card button { padding: 8px; font-size: 11px; }
+
+        .table-wrap { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 320px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--gray); }
+        th { background-color: #f8f9fa; color: #57606f; }
+
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+        .badge-wait { background: #ffeaa7; color: #d63031; }
+        .badge-cooking { background: #74b9ff; color: #0984e3; }
+        .badge-done { background: #55efc4; color: #00b894; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+        .stat-box { background: #f8f9fa; padding: 12px; border-radius: 12px; border-left: 4px solid var(--primary); }
+        .stat-box h4 { font-size: 10px; color: #747d8c; margin-bottom: 2px; }
+        .stat-box span { font-size: 16px; font-weight: 700; color: var(--dark); }
     </style>
-
-<style>
-body{transition:background 1s;}
-#statsBox{
-    margin:15px auto;
-    background:rgba(30,30,30,.85);
-    padding:10px 18px;
-    border-radius:14px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:15px;
-    color:white;
-    font-family:'Kanit',sans-serif;
-    font-size:14px;
-    max-width:90%;
-    backdrop-filter:blur(10px);
-}
-
-.stat-item{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    white-space:nowrap;
-}
-
-.stat-item i{
-    font-size:18px;
-    color:#d1d5db;
-}
-
-.stat-line{
-    width:1px;
-    height:25px;
-    background:rgba(255,255,255,.25);
-}
-
-.online i{
-    color:#22c55e;
-}
-</style>
 </head>
 <body>
 
-<div class="container">
-    <div id="home" class="page active">
-        <div style="text-align: center; margin-bottom: 10px;">
-    <span class="status-dot"></span> Online 
-    <span style="display: block; margin-top: 5px;">พร้อมดูแลคุณเสมอครับ</span>
-</div>
-        <h3 id="greeting"></h3>
-        
-        <img id="profile-img" src="" class="profile-pic">
-        <h1>NUTT</h1>
-<p>IT Student | ดูแลคุณได้มากกว่าคอมพิวเตอร์</p>
+    <div class="phone-frame">
+        <header>
+            <h1>🌶️ ส้มตำแซ่บเวอร์</h1>
+        </header>
 
-<!-- แทนที่ statsBox เดิมด้วยอันนี้ -->
-<div id="status-message-box" style="
-    margin: 15px auto; 
-    background: rgba(255, 255, 255, 0.6); 
-    padding: 12px 20px; 
-    border-radius: 20px; 
-    color: #475569; 
-    font-family: 'Kanit', sans-serif; 
-    font-size: 0.9rem; 
-    max-width: 90%; 
-    backdrop-filter: blur(10px); 
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    animation: pulse-soft 3s infinite ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-">
-    <i class="fas fa-code" style="color: #4f46e5; font-size: 1rem;"></i>
-    <span id="dynamic-message" style="font-weight: 500;"></span>
-</div>
+        <div class="content-area">
 
-<style>
-@keyframes pulse-soft {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-    100% { transform: scale(1); }
-}
-</style>
+            <!-- ================= 1. ฝั่งลูกค้า (หน้าแรกบังคับ Login ด้วยชื่อและเบอร์โทร) ================= -->
+            <div id="customer" class="section active-section">
+                <div id="cust-login-box" class="card">
+                    <h3>👋 เข้าสู่ระบบสั่งอาหาร</h3>
+                    <p style="font-size: 11px; color: #747d8c; margin-bottom: 12px;">กรุณากรอกข้อมูลเพื่อเริ่มสั่งอาหาร</p>
+                    <label>ชื่อที่อยากให้ร้านเรียก:</label>
+                    <input type="text" id="cust-nickname" placeholder="เช่น น้องส้ม">
+                    <label>เบอร์โทรศัพท์ (บังคับกรอก):</label>
+                    <input type="tel" id="cust-phone" placeholder="0812345678">
+                    <button class="btn" onclick="customerLogin()">เข้าสู่ระบบ</button>
+                </div>
 
+                <div id="cust-main-portal" style="display:none;">
+                    <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-bottom: 12px;">
+                        <div>
+                            <span style="font-size: 10px; color: #747d8c;">ผู้ใช้งาน</span>
+                            <div id="display-name" style="font-size: 12px; font-weight: 600;"></div>
+                        </div>
+                        <button class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 11px;" onclick="customerLogout()">ออกจากระบบ</button>
+                    </div>
 
-        <div class="social-container" id="socialLinks"></div>
+                    <h3>📜 เมนูแนะนำ</h3>
+                    <div class="menu-grid">
+                        <div class="menu-card">
+                            <div class="menu-icon">🥗</div>
+                            <div class="menu-title">ตำไทย</div>
+                            <div class="menu-price">60 ฿</div>
+                            <select id="spicy-1">
+                                <option>ไม่เผ็ด</option><option>เผ็ดน้อย</option><option selected>เผ็ดกลาง</option><option>เผ็ดมาก</option><option>เผ็ดที่สุด</option>
+                            </select>
+                            <input type="text" id="note-1" placeholder="หมายเหตุ...">
+                            <button class="btn" onclick="addToCart('ตำไทย', 60, 'spicy-1', 'note-1')">+ ใส่ตะกร้า</button>
+                        </div>
+                        <div class="menu-card">
+                            <div class="menu-icon">🦀</div>
+                            <div class="menu-title">ตำปูปลาร้า</div>
+                            <div class="menu-price">50 ฿</div>
+                            <select id="spicy-2">
+                                <option>ไม่เผ็ด</option><option>เผ็ดน้อย</option><option selected>เผ็ดกลาง</option><option>เผ็ดมาก</option><option>เผ็ดที่สุด</option>
+                            </select>
+                            <input type="text" id="note-2" placeholder="หมายเหตุ...">
+                            <button class="btn" onclick="addToCart('ตำปูปลาร้า', 50, 'spicy-2', 'note-2')">+ ใส่ตะกร้า</button>
+                        </div>
+                    </div>
 
-        <div style="margin: 20px 0; background: white; padding: 15px; border-radius: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-            <iframe id="main-yt-player" class="youtube-frame" src="" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            <button class="mini-btn" onclick="showPage('music')">ดูเพลงอื่นๆ เพิ่มเติม >></button>
-        </div>
+                    <h3>🛒 ตะกร้าสินค้า</h3>
+                    <div id="cart-container" class="card"><p style="color: #747d8c; font-size: 12px; text-align: center;">ยังไม่มีสินค้าในตะกร้า</p></div>
+                    
+                    <div id="checkout-section" class="card" style="display:none;">
+                        <h3>💳 วิธีชำระเงิน</h3>
+                        <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 12px;">
+                            <label><input type="radio" name="pay-method" value="cash" checked onclick="togglePayment('cash')"> เงินสด</label>
+                            <label><input type="radio" name="pay-method" value="transfer" onclick="togglePayment('transfer')"> โอนเงิน</label>
+                        </div>
+                        <div id="transfer-info" style="display:none; background:#f8f9fa; padding:10px; border-radius:8px; margin-bottom:10px; font-size: 11px;">
+                            <p><b>PromptPay:</b> 081-234-5678</p>
+                            <p><b>ธนาคาร:</b> 123-4-56789-0 (กสิกร)</p>
+                            <label style="margin-top: 6px; font-size: 10px;">อัปโหลดสลิป:</label>
+                            <input type="file" style="margin-bottom: 0; padding: 2px; font-size: 10px;">
+                        </div>
+                        <button class="btn" style="background: var(--secondary);" onclick="checkoutOrder()">🚀 ยืนยันการสั่งซื้อ</button>
+                    </div>
 
-        <div id="hobbies-container" style="margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4 style="color:#64748b; margin:0;">งานอดิเรก</h4>
-                <button class="mini-btn" onclick="toggleHobbyLayout()">สลับโหมด</button>
+                    <h3 style="margin-top: 16px;">📦 ประวัติออเดอร์</h3>
+                    <div id="customer-orders-list"><p style="color: #747d8c; font-size: 12px;">ยังไม่มีประวัติออเดอร์</p></div>
+                </div>
             </div>
-            <div id="hobbies-list" style="display: flex; flex-direction: column; gap: 5px; align-items: center;"></div>
+
+            <!-- ================= 2. ฝั่งพนักงาน/แอดมิน (สลับบทบาท + ใส่ Password อย่างเดียว) ================= -->
+            <div id="staff" class="section">
+                <div id="staff-login-box" class="card">
+                    <h3>🔐 เข้าสู่ระบบพนักงาน / แอดมิน</h3>
+                    <p style="font-size: 11px; color: #747d8c; margin-bottom: 12px;">กรุณาเลือกบทบาทและใส่รหัสผ่าน</p>
+                    
+                    <label>เลือกบทบาท:</label>
+                    <select id="staff-role-select">
+                        <option value="staff">👨‍🍳 พนักงานครัว</option>
+                        <option value="admin">⚙️ แอดมิน</option>
+                    </select>
+
+                    <label>Password:</label>
+                    <input type="password" id="staff-password-only" placeholder="กรอกรหัสผ่าน">
+                    <button class="btn" onclick="unifiedStaffLogin()">เข้าสู่ระบบ</button>
+                </div>
+
+                <!-- หน้าจัดการพนักงานครัว -->
+                <div id="staff-main-portal" style="display:none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 14px;">👨‍🍳 ครัวแซ่บเวอร์</h3>
+                        <button class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 11px;" onclick="staffLogout()">ออกจากระบบ</button>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box"><h4>ทั้งหมด</h4><span id="st-total">0</span></div>
+                        <div class="stat-box" style="border-left-color: #ffa502;"><h4>รอทำ</h4><span id="st-wait">0</span></div>
+                        <div class="stat-box" style="border-left-color: #3742fa;"><h4>กำลังทำ</h4><span id="st-cooking">0</span></div>
+                        <div class="stat-box" style="border-left-color: #2ed573;"><h4>เสร็จแล้ว</h4><span id="st-done">0</span></div>
+                    </div>
+
+                    <h3>📋 รายการออเดอร์</h3>
+                    <div class="card" style="padding: 8px;">
+                        <div class="table-wrap">
+                            <div id="staff-orders-container"><p style="color: #747d8c; font-size: 12px; text-align: center;">ไม่มีออเดอร์</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- หน้าจัดการแอดมิน -->
+                <div id="admin-main-portal" style="display:none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 14px;">⚙️ แอดมิน</h3>
+                        <button class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 11px;" onclick="staffLogout()">ออกจากระบบ</button>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box"><h4>ยอดวันนี้</h4><span>1,250 ฿</span></div>
+                        <div class="stat-box" style="border-left-color: #2ed573;"><h4>ยอดเดือนนี้</h4><span>35,000 ฿</span></div>
+                    </div>
+
+                    <div class="card">
+                        <h4 style="font-size: 13px; margin-bottom: 6px;">🛠️ จัดการระบบ</h4>
+                        <p style="color: #57606f; font-size: 12px; margin-bottom: 4px;">• จัดการเมนูอาหาร</p>
+                        <p style="color: #57606f; font-size: 12px; margin-bottom: 4px;">• จัดการพนักงาน</p>
+                        <p style="color: #57606f; font-size: 12px;">• ดูรีวิวและรายงาน</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
+        <nav>
+            <button class="active" onclick="switchTab('customer')">
+                <span>📱</span> ลูกค้าสั่งอาหาร
+            </button>
+            <button onclick="switchTab('staff')">
+                <span>🔐</span> พนักงาน / แอดมิน
+            </button>
+        </nav>
     </div>
 
-    <div id="music" class="page">
-        <button class="btn" style="background:#64748b; margin-bottom: 20px;" onclick="showPage('home')">
-            <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
-        </button>
-        
-        <h2>My Music List</h2>
-        <div id="full-music-list"></div>
-    </div>
-
-<button id="chat-toggle-btn" style="position:fixed; bottom:20px; right:20px; z-index:9999; width:60px; height:60px; border-radius:50%; background:#4f46e5; color:white; border:none; cursor:pointer; box-shadow:0 4px 20px rgba(79, 70, 229, 0.4);">
-    <i class="fas fa-comment-dots" style="font-size:24px;"></i>
-</button>
-
-<div id="chat-window">
-    <div style="background:#4f46e5; color:white; padding:15px; text-align:center; font-weight:bold;">แชทกับ ตัวแทน นัต</div>
-    <div id="chat-messages" style="flex:1; padding:15px; overflow-y:auto; font-size:14px; color:#333; text-align:left;">
-        <div style="margin-bottom:10px;">โย่! มีอะไรอยากถามนัตมั้ย? จิ้มเลือกคำถามด้านล่างได้เลยนะ!</div>
-    </div>
-    <div id="chat-choices" style="padding:10px; display:flex; flex-wrap:wrap; gap:5px; border-top:1px solid #eee; justify-content:center;"></div>
-</div>
-
-<script>
-    const config = {
-        profileImages: [
-            "https://media.discordapp.net/attachments/1515884744733233314/1525805020291793036/31132288733f70e7c05d10bc3a104f59.gif?ex=6a54b828&is=6a5366a8&hm=9438ef5af8140071980ff590eef282cbdcfe822ba13542f1e89a61d0914223e3&=",
-            "https://media.discordapp.net/attachments/1515884744733233314/1525804851567525938/300664275_439943731488554_4247432938376776043_n.jpg?ex=6a54b800&is=6a536680&hm=dd32079b2a62596c3cdc1685fd0f76e5ca162bf6d0220d8dee7230d72f0a5771&=&format=webp&width=783&height=779"
-        ],
-        hobbies: [
-            { name: "ดูอนิเมะ", show: true },
-            { name: "เล่นเกม", show: true },
-            { name: "ถ่ายรูป", show: true },
-            { name: "ดู YouTube", show: true },
-            { name: "ดู IG", show: true },
-            { name: "อยู่ในดิสคอร์ด", show: true }
-        ],
-        musicList: [
-            "https://www.youtube.com/embed/DJq0jJhPSjg", 
-            "https://youtu.be/F98j9IcSfdc?si=lGy0IY8oSH7DDkjf", 
-            "https://youtu.be/ssKJYCw7Z7c?si=7Ug40irR2cIeiVkA", 
-            "https://www.youtube.com/watch?v=Ik228UkBp6w&list=RDIk228UkBp6w&start_radio=1", 
-            "https://www.youtube.com/watch?v=k7qg9Q0w_m0&list=RDk7qg9Q0w_m0&start_radio=1", 
-            "https://www.youtube.com/watch?v=dfPJoRI7JVE", 
-            "https://www.youtube.com/watch?v=ebxzxo_q89Y&list=RDk7qg9Q0w_m0&index=5"
-        ],
-        socials: [
-            { url: "https://discord.gg/wAGZGyEjQH", iconClass: "fab fa-discord", color: "#5865F2" },
-            { url: "https://www.instagram.com/_nuttsume/", iconClass: "fab fa-instagram", color: "#E1306C" },
-            { url: "https://open.spotify.com/user/317tsqx2bfvb34z2xcw7jouksxua", iconClass: "fab fa-spotify", color: "#1DB954" },
-            { url: "https://www.tiktok.com/@nuttsume_chan", iconClass: "fab fa-tiktok", color: "#000000" }
-        ],
-        webhookUrl: "https://discord.com/api/webhooks/1525852496080404510/wTRd5yaktwBNbXgVbSUTegOO1IrswczuOMrnfx8N5FmkJQstyti7RUPsjgckOelpD7gU"
-    };
-
-    const chatData = {
-
-    // 1. แนะนำตัว
-    "แนะนำตัวหน่อย?": {
-        a: `<b>สวัสดีครับ ผมขอแนะนำตัวนะครับ!</b><br><br>
-            • <b>ชื่อเล่น:</b> นัต<br>
-            • <b>อายุ:</b> 22 ปี<br>
-            • <b>ส่วนสูง:</b> 173 ซม.<br>
-            • <b>สถานะการศึกษา:</b> IT Student 💻<br>
-            • <b>สถานะหัวใจ:</b> โสด 1000%<br>
-            • <b>รูปร่าง:</b> หุ่นหมี 🐻<br><br>
-            <b>นิสัยส่วนตัว:</b><br>
-            เป็นคนคุยไม่เก่งเท่าไหร่ แต่ถ้าได้ลองเปิดใจจะรู้ว่าเป็นคนรักจริงนะครับ! ปกตินัตเป็นคนติดเล่นและขี้แกล้งสุด ๆ แต่ถ้าถึงเวลาต้องจริงจัง นัตก็โฟกัสเต็มที่ ส่วนนิสัยลึก ๆ เป็นคนขี้อ้อน ขี้หึงขี้หวงนิดหน่อย และชอบใช้เวลากับคนที่สนิทครับ 😊`
-    },
-
-    // 2. ทำอะไรอยู่
-    "ทำอะไรอยู่?": {
-        a: "ช่วงนี้กำลังนั่งปั่นโปรเจกต์กับฟังเพลงชิล ๆ ครับ 😆 แต่ถ้ามีคนทักมา นัตก็ตอบเรื่อย ๆ นะ"
-    },
-
-    // 3. ช่องทางติดต่อ
-    "ช่องทางติดต่อ": {
-        a: "เลือกช่องทางที่สะดวกได้เลยครับ 😊",
-        options: ["IG", "Discord"]
-    },
-
-    // 4. โสดไหม
-    "โสดไหม?": {
-        a: "โสดครับ 😆 ถ้าอยากรู้จักกันมากขึ้น ลองคุยกันก่อนได้นะ"
-    }
-
-};
-    function sendToDiscord(userMessage, botReply) {
-    const ua = navigator.userAgent;
-    const screenRes = `${window.screen.width} x ${window.screen.height}`;
-    const language = navigator.language;
-    const platform = navigator.platform;
-
-    // ใช้การดึง Browser แบบแยกชื่อ
-    const browser = (ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [])[0] || "Unknown Browser";
-
-    fetch(config.webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            embeds: [{
-                title: "💬 มีข้อความใหม่จากเว็บไซต์",
-                color: 5865492, // สีโทนเขียว-น้ำเงิน ดูสบายตา
-                fields: [
-                    { name: "👤 คำถามจากผู้ใช้", value: `>>> ${userMessage}`, inline: false },
-                    { name: "🤖 นัต (AI) ตอบกลับ", value: `>>> ${botReply.replace(/<[^>]*>?/gm, '')}`, inline: false },
-                    { name: "💻 ข้อมูลอุปกรณ์และสเปค", value: `**ระบบปฏิบัติการ:** ${platform}\n**เบราว์เซอร์:** ${browser}\n**ความละเอียดจอ:** ${screenRes}\n**ภาษาที่ใช้:** ${language}`, inline: false }
-                ],
-                footer: { 
-                    text: "ระบบแจ้งเตือนอัตโนมัติ • ข้อมูลจำกัดเนื่องจากข้อกำหนดความเป็นส่วนตัว" 
-                },
-                timestamp: new Date() // เพิ่มเวลาที่ส่งข้อความจริง
-            }]
-        })
-    }).catch(err => console.error("Discord Error:", err));
-}
-
-    const choiceContainer = document.getElementById('chat-choices');
-    const msgDiv = document.getElementById('chat-messages');
-
-    function renderButtons(keys) {
-        choiceContainer.innerHTML = '';
-        keys.forEach(key => {
-            const btn = document.createElement('button');
-            btn.className = 'mini-btn';
-            btn.innerText = key;
-            btn.onclick = () => sendToChat(key);
-            choiceContainer.appendChild(btn);
-        });
-    }
-
-    renderButtons(Object.keys(chatData));
-
-    function sendToChat(choice) {
-        msgDiv.innerHTML += `<div style="margin-bottom:10px; color:#4f46e5;"><b>คุณ:</b> ${choice}</div>`;
-        let reply = "";
-        if (chatData[choice]) {
-            reply = chatData[choice].a;
-            if (chatData[choice].options) {
-                setTimeout(() => renderButtons(chatData[choice].options), 500);
-            } else {
-                setTimeout(() => renderButtons(Object.keys(chatData)), 1000);
-            }
-        } else if (choice === "IG") {
-            reply = "นี่เลยครับ IG นัท: <a href='https://www.instagram.com/_nuttsume/' target='_blank'>@_nuttsume_</a>";
-            setTimeout(() => renderButtons(Object.keys(chatData)), 1000);
-        } else if (choice === "Discord") {
-            reply = "ทักมาได้ที่ Discord นี้เลยครับ!: <a href='https://discord.gg/wAGZGyEjQH' target='_blank'>กดเข้า Discord ของนัตที่นี่</a>";
-            setTimeout(() => renderButtons(Object.keys(chatData)), 1000);
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active-section'));
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active-section');
+            event.currentTarget.classList.add('active');
         }
-        setTimeout(() => {
-            msgDiv.innerHTML += `<div style="margin-bottom:10px;"><b>AI:</b> ${reply}</div>`;
-            msgDiv.scrollTop = msgDiv.scrollHeight;
-            sendToDiscord(choice, reply); // เรียกใช้งานส่งข้อความไป Discord
-        }, 300);
-    }
 
-    function convertYoutubeEmbed(url){
-        if(url.includes("/embed/")) return url;
-        let m=url.match(/youtu\.be\/([^?&]+)/)||url.match(/[?&]v=([^?&]+)/)||url.match(/embed\/([^?&]+)/);
-        return m?`https://www.youtube.com/embed/${m[1]}`:url;
-    }
+        let currentCustomer = null;
+        let cart = [];
+        let globalOrders = [];
 
-    let currentImgIndex = 0;
-    const imgElement = document.getElementById('profile-img');
-    imgElement.src = config.profileImages[0];
-    setInterval(() => {
-        currentImgIndex = (currentImgIndex + 1) % config.profileImages.length;
-        imgElement.src = config.profileImages[currentImgIndex];
-    }, 300000);
+        function customerLogin() {
+            let nick = document.getElementById('cust-nickname').value;
+            let phone = document.getElementById('cust-phone').value;
+            if(!phone) {
+                alert("กรุณากรอกเบอร์โทรศัพท์ด้วยครับ!");
+                return;
+            }
+            currentCustomer = { name: nick || "ลูกค้าทั่วไป", phone: phone };
+            document.getElementById('cust-login-box').style.display = 'none';
+            document.getElementById('cust-main-portal').style.display = 'block';
+            document.getElementById('display-name').innerText = currentCustomer.name + " (" + currentCustomer.phone + ")";
+        }
 
-    let isRow = false;
-    function toggleHobbyLayout() {
-        const list = document.getElementById('hobbies-list');
-        isRow = !isRow;
-        list.style.flexDirection = isRow ? 'row' : 'column';
-    }
+        function customerLogout() {
+            currentCustomer = null;
+            cart = [];
+            document.getElementById('cust-nickname').value = '';
+            document.getElementById('cust-phone').value = '';
+            document.getElementById('cust-login-box').style.display = 'block';
+            document.getElementById('cust-main-portal').style.display = 'none';
+            renderCart();
+        }
 
-    document.getElementById('chat-toggle-btn').addEventListener('click', () => {
-        const win = document.getElementById('chat-window');
-        win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
-    });
-    
-    config.socials.forEach(s => document.getElementById('socialLinks').innerHTML += `<a href="${s.url}" target="_blank" class="social-btn" style="color: ${s.color};"><i class="${s.iconClass}"></i></a>`);
-    config.hobbies.forEach(h => { if(h.show) document.getElementById('hobbies-list').innerHTML += `<div style="padding: 3px; color:#475569;">• ${h.name}</div>`; });
-    
-    document.getElementById('main-yt-player').src = convertYoutubeEmbed(config.musicList[0]);
-    config.musicList.forEach(url => document.getElementById('full-music-list').innerHTML += `<iframe class="youtube-frame" src="${convertYoutubeEmbed(url)}" loading="lazy" style="margin-bottom:18px;"></iframe>`);
+        function addToCart(menuName, price, spicyId, noteId) {
+            let spicy = document.getElementById(spicyId).value;
+            let note = document.getElementById(noteId).value;
+            cart.push({ name: menuName, price: price, spicy: spicy, note: note });
+            renderCart();
+        }
 
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-        const chatBtn = document.getElementById("chat-toggle-btn");
-        const chatWin = document.getElementById("chat-window");
-        chatBtn.style.display = (pageId === "home") ? "block" : "none";
-        chatWin.style.display = "none";
-    }
-</script>
+        function renderCart() {
+            let container = document.getElementById('cart-container');
+            let checkoutSec = document.getElementById('checkout-section');
+            if(cart.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px; text-align: center;'>ยังไม่มีสินค้าในตะกร้า</p>";
+                checkoutSec.style.display = 'none';
+                return;
+            }
+            let html = `<table><tr><th>เมนู</th><th>ราคา</th><th>เผ็ด/โน้ต</th><th></th></tr>`;
+            let total = 0;
+            cart.forEach((item, index) => {
+                total += item.price;
+                html += `<tr>
+                    <td><b>${item.name}</b></td>
+                    <td>${item.price}฿</td>
+                    <td>${item.spicy}<br><small style="color:#747d8c;">${item.note || '-'}</small></td>
+                    <td><button style="background:#ff4757; color:white; border:none; padding:3px 6px; border-radius:4px; font-size:10px;" onclick="removeFromCart(${index})">ลบ</button></td>
+                </tr>`;
+            });
+            html += `</table><p style="margin-top:8px; font-size:13px; text-align:right;"><b>รวม: ${total} บาท</b></p>`;
+            container.innerHTML = html;
+            checkoutSec.style.display = 'block';
+        }
 
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
 
-<script>
-(function(){
-    const h = new Date().getHours();
-    const b = document.body;
-    const msgEl = document.getElementById('dynamic-message');
-    
-    // ตั้งค่าพื้นหลัง
-    if(h<5||h>=19) b.style.background="linear-gradient(135deg,#0f172a,#312e81)";
-    else if(h<11) b.style.background="linear-gradient(135deg,#87ceeb,#fff7b2)";
-    else if(h<17) b.style.background="linear-gradient(135deg,#7dd3fc,#ffffff)";
-    else b.style.background="linear-gradient(135deg,#fb923c,#c084fc)";
+        function togglePayment(method) {
+            document.getElementById('transfer-info').style.display = (method === 'transfer') ? 'block' : 'none';
+        }
 
-    // ข้อความต้อนรับตามช่วงเวลา
-    const greetingText = 
-        (h >= 5 && h < 12)  ? "อรุณสวัสดิ์ครับ.. เช้านี้สดใสจังเลยนะ" : 
-        (h >= 12 && h < 17) ? "สวัสดีตอนบ่ายครับ.. ทำอะไรอยู่เอ่ย?" : 
-        (h >= 17 && h < 20) ? "เย็นแล้วนะครับ.. พักสายตาจากหน้าจอบ้างนะ" : 
-        (h >= 20 && h < 23) ? "ดึกแล้ว.. เหงาไหมครับ? ทักมาคุยกับนัตได้นะ" : "ดึกมากแล้ว.. Good Night นะครับ 🌙✨";
-    
-    msgEl.innerText = greetingText;
-})();
-</script>
+        function checkoutOrder() {
+            let orderId = "#A00" + (globalOrders.length + 1);
+            let newOrder = {
+                id: orderId,
+                customer: currentCustomer,
+                items: [...cart],
+                status: "รอทำ",
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                timestamp: Date.now()
+            };
+            globalOrders.push(newOrder);
+            cart = [];
+            renderCart();
+            alert("สั่งซื้อสำเร็จ! เลขออเดอร์: " + orderId);
+            renderCustomerOrders();
+            renderStaffOrders();
+        }
+
+        function renderCustomerOrders() {
+            let container = document.getElementById('customer-orders-list');
+            let myOrders = globalOrders.filter(o => o.customer.phone === currentCustomer.phone);
+            if(myOrders.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px;'>ยังไม่มีประวัติออเดอร์</p>";
+                return;
+            }
+            let html = "";
+            myOrders.forEach(o => {
+                let canCancel = (o.status === "รอทำ") && ((Date.now() - o.timestamp) < 10 * 60 * 1000);
+                let badgeClass = o.status === 'รอทำ' ? 'badge-wait' : (o.status === 'กำลังทำ' ? 'badge-cooking' : 'badge-done');
+                html += `<div class="card" style="padding: 10px; margin-bottom: 8px; font-size: 12px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <b>เลขออเดอร์: ${o.id}</b>
+                        <span class="badge ${badgeClass}">${o.status}</span>
+                    </div>
+                    <p style="color:#57606f; margin-bottom:6px;">${o.items.map(i => i.name + ' (' + i.spicy + ')').join(', ')}</p>
+                    ${canCancel ? `<button style="background:#ff4757; color:white; border:none; padding:3px 6px; border-radius:4px; font-size:10px;" onclick="cancelOrder('${o.id}')">ยกเลิกออเดอร์</button>` : `<small style="color:#a4b0be;">*ยกเลิกไม่ได้แล้ว</small>`}
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function cancelOrder(orderId) {
+            let order = globalOrders.find(o => o.id === orderId);
+            if(order) {
+                order.status = "ยกเลิก";
+                alert("ยกเลิกออเดอร์ " + orderId + " เรียบร้อย");
+                renderCustomerOrders();
+                renderStaffOrders();
+            }
+        }
+
+        // --- ระบบล็อกอินพนักงาน / แอดมิน (เลือกบทบาท + ใส่ Password อย่างเดียว) ---
+        function unifiedStaffLogin() {
+            let role = document.getElementById('staff-role-select').value;
+            let pass = document.getElementById('staff-password-only').value;
+
+            if (!pass) {
+                alert("กรุณากรอกรหัสผ่าน!");
+                return;
+            }
+
+            if (role === 'admin') {
+                // เช็ครหัสผ่านแอดมินจาก accounts.js
+                if (typeof authenticateAdmin === 'function' && authenticateAdmin('admin', pass)) {
+                    document.getElementById('staff-login-box').style.display = 'none';
+                    document.getElementById('admin-main-portal').style.display = 'block';
+                    return;
+                }
+            } else if (role === 'staff') {
+                // เช็ครหัสผ่านพนักงานจาก accounts.js (ใช้ username จำลองส่งไปเช็คคู่กับรหัสผ่าน)
+                if (typeof authenticateStaff === 'function' && authenticateStaff('staff', pass)) {
+                    document.getElementById('staff-login-box').style.display = 'none';
+                    document.getElementById('staff-main-portal').style.display = 'block';
+                    renderStaffOrders();
+                    return;
+                }
+            }
+
+            alert("รหัสผ่านไม่ถูกต้อง!");
+        }
+
+        function staffLogout() {
+            document.getElementById('staff-password-only').value = '';
+            document.getElementById('staff-login-box').style.display = 'block';
+            document.getElementById('staff-main-portal').style.display = 'none';
+            document.getElementById('admin-main-portal').style.display = 'none';
+        }
+
+        function renderStaffOrders() {
+            let container = document.getElementById('staff-orders-container');
+            if(globalOrders.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px; text-align: center;'>ไม่มีออเดอร์</p>";
+                return;
+            }
+
+            let total = globalOrders.length;
+            let wait = globalOrders.filter(o => o.status === 'รอทำ').length;
+            let cooking = globalOrders.filter(o => o.status === 'กำลังทำ').length;
+            let done = globalOrders.filter(o => o.status === 'เสร็จแล้ว').length;
+            
+            document.getElementById('st-total').innerText = total;
+            document.getElementById('st-wait').innerText = wait;
+            document.getElementById('st-cooking').innerText = cooking;
+            document.getElementById('st-done').innerText = done;
+
+            let html = `<table><tr><th>ออเดอร์</th><th>ลูกค้า</th><th>เมนู</th><th>สถานะ</th><th>จัดการ</th></tr>`;
+            globalOrders.forEach(o => {
+                let badgeClass = o.status === 'รอทำ' ? 'badge-wait' : (o.status === 'กำลังทำ' ? 'badge-cooking' : 'badge-done');
+                html += `<tr>
+                    <td><b>${o.id}</b><br><small>${o.time}</small></td>
+                    <td>${o.customer.name} (${o.customer.phone})</td>
+                    <td>${o.items.map(i => `${i.name} [${i.spicy}]`).join('<br>')}</td>
+                    <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                    <td>
+                        ${o.status === 'รอทำ' ? `<button style="background:#ffa502; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px;" onclick="updateOrderStatus('${o.id}', 'กำลังทำ')">รับงาน</button>` : ''}
+                        ${o.status === 'กำลังทำ' ? `<button style="background:#2ed573; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px;" onclick="updateOrderStatus('${o.id}', 'เสร็จแล้ว')">เสร็จ</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            let order = globalOrders.find(o => o.id === orderId);
+            if(order) {
+                order.status = newStatus;
+                if(newStatus === 'เสร็จแล้ว') alert("🔔 ออเดอร์ " + orderId + " ทำเสร็จแล้ว!");
+                renderStaffOrders();
+                if(currentCustomer) renderCustomerOrders();
+            }
+        }
+    </script>
 </body>
 </html>
