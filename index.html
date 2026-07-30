@@ -167,7 +167,7 @@
 
         <div class="content-area">
 
-            <!-- ================= 1. ฝั่งลูกค้า (หน้าแรกบังคับ Login ด้วยชื่อและเบอร์โทร) ================= -->
+            <!-- ================= 1. ฝั่งลูกค้า ================= -->
             <div id="customer" class="section active-section">
                 <div id="cust-login-box" class="card">
                     <h3>👋 เข้าสู่ระบบสั่งอาหาร</h3>
@@ -235,7 +235,7 @@
                 </div>
             </div>
 
-            <!-- ================= 2. ฝั่งพนักงาน/แอดมิน (สลับบทบาท + ใส่ Password อย่างเดียว) ================= -->
+            <!-- ================= 2. ฝั่งพนักงาน/แอดมิน ================= -->
             <div id="staff" class="section">
                 <div id="staff-login-box" class="card">
                     <h3>🔐 เข้าสู่ระบบพนักงาน / แอดมิน</h3>
@@ -298,21 +298,23 @@
         </div>
 
         <nav>
-            <button class="active" onclick="switchTab('customer')">
+            <button class="active" onclick="switchTab('customer', event)">
                 <span>📱</span> ลูกค้าสั่งอาหาร
             </button>
-            <button onclick="switchTab('staff')">
+            <button onclick="switchTab('staff', event)">
                 <span>🔐</span> พนักงาน / แอดมิน
             </button>
         </nav>
     </div>
 
     <script>
-        function switchTab(tabId) {
+        function switchTab(tabId, evt) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active-section'));
             document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active-section');
-            event.currentTarget.classList.add('active');
+            if(evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+            }
         }
 
         let currentCustomer = null;
@@ -433,7 +435,6 @@
             }
         }
 
-        // --- ระบบล็อกอินพนักงาน / แอดมิน (เลือกบทบาท + ใส่ Password อย่างเดียว) ---
         function unifiedStaffLogin() {
             let role = document.getElementById('staff-role-select').value;
             let pass = document.getElementById('staff-password-only').value;
@@ -444,14 +445,12 @@
             }
 
             if (role === 'admin') {
-                // เช็ครหัสผ่านแอดมินจาก accounts.js
                 if (typeof authenticateAdmin === 'function' && authenticateAdmin('admin', pass)) {
                     document.getElementById('staff-login-box').style.display = 'none';
                     document.getElementById('admin-main-portal').style.display = 'block';
                     return;
                 }
             } else if (role === 'staff') {
-                // เช็ครหัสผ่านพนักงานจาก accounts.js (ใช้ username จำลองส่งไปเช็คคู่กับรหัสผ่าน)
                 if (typeof authenticateStaff === 'function' && authenticateStaff('staff', pass)) {
                     document.getElementById('staff-login-box').style.display = 'none';
                     document.getElementById('staff-main-portal').style.display = 'block';
