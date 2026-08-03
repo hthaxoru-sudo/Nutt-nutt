@@ -1,1 +1,1589 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌶️ ส้มตำแซ่บเวอร์ - Omni-Device & Smart AI Routing Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase (ทำให้ระบบทำงานออนไลน์ ข้อมูลซิงค์เรียลไทม์ทุกอุปกรณ์) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #ff4757;
+            --primary-gradient: linear-gradient(135deg, #ff4757, #ff6b81);
+            --secondary: #2ed573;
+            --dark: #2f3542;
+            --bg-color: #f1f2f6;
+            --white: #ffffff;
+            --gray: #dfe4ea;
+            --radius: 18px;
+        }
 
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: #1e272e; 
+            color: var(--dark); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Responsive Global App Frame รองรับทุกอุปกรณ์ (มือถือ, แท็บเล็ต, คอมพิวเตอร์) */
+        .app-container {
+            width: 100%;
+            height: 100vh;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        @media (min-width: 600px) and (max-width: 1023px) {
+            .app-container {
+                max-width: 720px;
+                height: 94vh;
+                border-radius: 28px;
+                border: 6px solid #3d3d3d;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .app-container {
+                max-width: 1280px;
+                height: 94vh;
+                border-radius: 32px;
+                border: 8px solid #3d3d3d;
+            }
+        }
+
+        header { 
+            background: var(--primary-gradient); 
+            color: white; 
+            padding: 16px 24px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.25);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        .device-indicator {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 90px;
+        }
+
+        @media (min-width: 1024px) {
+            .content-area { padding: 30px; }
+        }
+
+        .section { display: none; }
+        .section.active-section { display: block; animation: fadeIn 0.25s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        nav { 
+            display: flex; 
+            justify-content: space-around; 
+            background: var(--white); 
+            padding: 10px 0; 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08); 
+            border-top: 1px solid var(--gray);
+            z-index: 1000;
+        }
+        nav button { 
+            background: transparent; 
+            border: none; 
+            color: #747d8c; 
+            font-size: 12px; 
+            font-weight: 500; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            cursor: pointer;
+            flex: 1;
+            transition: color 0.2s;
+        }
+        nav button span { font-size: 20px; }
+        nav button.active { color: var(--primary); font-weight: 700; }
+
+        .card { background: var(--white); padding: 20px; border-radius: var(--radius); box-shadow: 0 6px 20px rgba(0,0,0,0.04); margin-bottom: 16px; border: 1px solid rgba(0,0,0,0.02); }
+        h2, h3, h4 { font-size: 16px; margin-bottom: 12px; color: var(--dark); font-weight: 600; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: #57606f; }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px 16px; 
+            margin-bottom: 14px; 
+            border: 1px solid var(--gray); 
+            border-radius: 14px; 
+            font-size: 14px; 
+            outline: none; 
+            background: #fff; 
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+
+        .btn { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: 600; 
+            width: 100%; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3); 
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary { background: #747d8c; box-shadow: none; }
+        .btn-success { background: var(--secondary); box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3); }
+
+        /* ระบบ Grid อัจฉริยะ ปรับเปลี่ยนตามอุปกรณ์ (Responsive Layouts) */
+        .responsive-grid-2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px) {
+            .responsive-grid-2 { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1024px) {
+            .responsive-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .responsive-grid-2-wide { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 20px; }
+        }
+
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+        @media (min-width: 768px) { .menu-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        .menu-card { background: white; border: 1px solid var(--gray); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 14px; transition: transform 0.2s; }
+        .menu-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
+        .menu-icon { font-size: 36px; text-align: center; margin: 6px 0; }
+        .menu-title { font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 2px; }
+        .menu-price { color: var(--primary); font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 10px; }
+        .menu-card select, .menu-card input { padding: 8px; font-size: 12px; margin-bottom: 8px; border-radius: 10px; }
+        .menu-card button { padding: 10px; font-size: 12px; border-radius: 10px; }
+
+        .table-wrap { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 320px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--gray); }
+        th { background-color: #f8f9fa; color: #57606f; font-weight: 600; }
+
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-wait { background: #ffeaa7; color: #d63031; }
+        .badge-cooking { background: #74b9ff; color: #0984e3; }
+        .badge-done { background: #55efc4; color: #00b894; }
+        .badge-cancel { background: #dfe4ea; color: #747d8c; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 16px; }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        .stat-box { background: #f8f9fa; padding: 16px; border-radius: 14px; border-left: 5px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .stat-box h4 { font-size: 12px; color: #747d8c; margin-bottom: 4px; }
+        .stat-box span { font-size: 22px; font-weight: 700; color: var(--dark); }
+
+        .star-rating { display: flex; gap: 6px; font-size: 24px; cursor: pointer; margin-bottom: 12px; }
+        .star-rating span { color: #dfe4ea; transition: color 0.1s; }
+        .star-rating span.selected { color: #f1c40f; }
+
+        .compact-scroll-box {
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid var(--gray);
+            border-radius: 14px;
+            padding: 10px;
+            background: #fafbfc;
+            margin-bottom: 10px;
+        }
+
+        .load-more-btn {
+            background: #f1f2f6;
+            color: #57606f;
+            border: 1px dashed var(--gray);
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+        .load-more-btn:hover { background: #dfe4ea; color: var(--dark); }
+
+        .popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
+            animation: fadeInOverlay 0.2s ease;
+        }
+        @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+
+        .popup-box { 
+            background: white; width: 100%; max-width: 400px; padding: 28px; border-radius: 24px; max-height: 90vh; overflow-y: auto; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25); text-align: center;
+            animation: scaleUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes scaleUp { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .tab-sub-menu { display: flex; gap: 8px; margin-bottom: 14px; }
+        .tab-sub-menu button { flex: 1; padding: 10px; font-size: 12px; border-radius: 10px; border: 1px solid var(--gray); background: #fff; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .tab-sub-menu button.active-sub { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(255,71,87,0.25); }
+
+        /* Floating Chat Widget & Smart AI Assistant UI (ดีไซน์พรีเมียม มุมขวาล่าง) */
+        .floating-chat-btn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            background: var(--primary-gradient);
+            color: white;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.45);
+            cursor: pointer;
+            z-index: 900;
+            border: none;
+            transition: transform 0.2s;
+        }
+        .floating-chat-btn:active { transform: scale(0.92); }
+        .chat-badge-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ff4757;
+            border: 2px solid white;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .chat-window {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    width: 280px;  /* ลดความกว้างลง */
+    height: 360px; /* ลดความสูงลง */
+    background: white;
+    border-radius: 22px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    display: none;
+    flex-direction: column;
+    z-index: 950;
+    overflow: hidden;
+    border: 1px solid var(--gray);
+    animation: scaleUp 0.2s ease;
+}
+        @media (max-width: 480px) {
+            .chat-window { width: calc(100vw - 30px); right: 15px; bottom: 75px; height: 420px; }
+        }
+
+        .chat-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 14px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-body {
+            flex-grow: 1;
+            padding: 14px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .chat-msg {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            line-height: 1.45;
+            word-break: break-word;
+        }
+        .chat-msg.customer { background: #e2e8f0; color: var(--dark); align-self: flex-start; border-bottom-left-radius: 3px; }
+        .chat-msg.staff { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 3px; }
+        .chat-msg.ai { background: #f1f2f6; color: #2f3542; border-left: 4px solid #3742fa; align-self: flex-start; }
+
+        .chat-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .chat-option-btn {
+            background: white;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .chat-option-btn:hover { background: #fff5f5; }
+
+        .chat-footer {
+            padding: 10px;
+            background: white;
+            border-top: 1px solid var(--gray);
+            display: flex;
+            gap: 8px;
+        }
+        .chat-footer input { margin-bottom: 0; padding: 10px 12px; font-size: 13px; border-radius: 10px; }
+        .chat-footer button { width: auto; padding: 0 16px; font-size: 13px; border-radius: 10px; }
+
+        /* รายชื่อแชทฝั่งพนักงาน/แอดมิน แสดงผู้ใช้แบบสากลชัดเจน */
+        .chat-inbox-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border: 1px solid var(--gray);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .chat-inbox-item:hover { background: #f1f2f6; border-color: var(--primary); }
+        .chat-unread-dot {
+            width: 10px; height: 10px; background: var(--primary); border-radius: 50%; display: inline-block; margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="main-app-frame">
+        <header id="main-header">
+            <h1>🌶️ ส้มตำแซ่บเวอร์</h1>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="device-indicator" id="sync-status-badge" title="สถานะการเชื่อมต่อฐานข้อมูลออนไลน์">🔴 ยังไม่เชื่อมต่อ</div>
+                <div class="device-indicator" id="device-type-badge">📱 Mobile View</div>
+            </div>
+        </header>
+
+        <div class="content-area">
+
+            <!-- ================= 1. ฝั่งลูกค้า (Customer Portal) ================= -->
+            <div id="customer" class="section active-section">
+                <div class="responsive-grid-2-wide" style="align-items: start;">
+                    <div>
+                        <div id="cust-login-box" class="card">
+                            <h3>👋 เข้าสู่ระบบสั่งอาหาร</h3>
+                            <p style="font-size: 12px; color: #747d8c; margin-bottom: 14px;">กรอกชื่อและเบอร์โทรเพื่อแยกบัญชีผู้ใช้งานส่วนตัวของคุณ</p>
+                            <label>ชื่อเล่น:</label>
+                            <input type="text" id="cust-nickname" placeholder="เช่น น้องส้ม">
+                            <label>เบอร์โทรศัพท์ (ID บัญชี):</label>
+                            <input type="tel" id="cust-phone" placeholder="0812345678">
+                            <button class="btn" onclick="customerLogin()">เข้าสู่ระบบ</button>
+                        </div>
+
+                        <div id="cust-main-portal" style="display:none;">
+                            <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin-bottom: 14px;">
+                                <div>
+                                    <span style="font-size: 11px; color: #747d8c;">บัญชีผู้ใช้งานปัจจุบัน</span>
+                                    <div id="display-name" style="font-size: 13px; font-weight: 600;"></div>
+                                </div>
+                                <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="customerLogout()">เปลี่ยนบัญชี</button>
+                            </div>
+
+                            <h3>🛒 ตะกร้าสินค้าส่วนตัวของคุณ</h3>
+                            <div id="cart-container" class="card"><p style="color: #747d8c; font-size: 12px; text-align: center;">ไม่มีสินค้าในตะกร้า</p></div>
+                            
+                            <div id="checkout-section" class="card" style="display:none;">
+                                <h3>💳 ช่องทางชำระเงิน</h3>
+                                <div style="display: flex; gap: 20px; margin-bottom: 14px; font-size: 13px;">
+                                    <label><input type="radio" name="pay-method" value="เงินสด" checked onclick="togglePayment('เงินสด')"> เงินสด</label>
+                                    <label><input type="radio" name="pay-method" value="โอนเงิน" onclick="togglePayment('โอนเงิน')"> โอนเงินผ่านธนาคาร</label>
+                                </div>
+                                <div id="transfer-info" style="display:none; background:#f8f9fa; padding:12px; border-radius:12px; margin-bottom:12px; font-size: 12px;">
+                                    <p><b>PromptPay:</b> 081-234-5678</p>
+                                    <p><b>เลขบัญชี:</b> 123-4-56789-0</p>
+                                    <label style="margin-top: 8px; font-size: 11px;">แนบสลิปโอนเงิน:</label>
+                                    <input type="file" id="slip-file" style="margin-bottom: 0; padding: 4px; font-size: 11px;">
+                                </div>
+                                <button class="btn btn-success" onclick="checkoutOrder()">🚀 ยืนยันการสั่งซื้อ</button>
+                            </div>
+
+                            <h3>📦 ประวัติออเดอร์เฉพาะบัญชีคุณ</h3>
+                            <div id="customer-orders-list"><p style="color: #747d8c; font-size: 12px;">ยังไม่มีประวัติออเดอร์</p></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3>📜 เมนูแนะนำความอร่อย</h3>
+                        <div class="menu-grid">
+                            <div class="menu-card">
+                                <div class="menu-icon">🥗</div>
+                                <div class="menu-title">ตำไทย</div>
+                                <div class="menu-price">60 ฿</div>
+                                <select id="spicy-1">
+                                    <option>ไม่เผ็ด</option><option>เผ็ดน้อย</option><option selected>เผ็ดกลาง</option><option>เผ็ดมาก</option>
+                                </select>
+                                <input type="text" id="note-1" placeholder="หมายเหตุพิเศษ...">
+                                <button class="btn" onclick="addToCart('ตำไทย', 60, 'spicy-1', 'note-1')">+ ใส่ตะกร้า</button>
+                            </div>
+                            <div class="menu-card">
+                                <div class="menu-icon">🦀</div>
+                                <div class="menu-title">ตำปูปลาร้า</div>
+                                <div class="menu-price">50 ฿</div>
+                                <select id="spicy-2">
+                                    <option>ไม่เผ็ด</option><option>เผ็ดน้อย</option><option selected>เผ็ดกลาง</option><option>เผ็ดมาก</option>
+                                </select>
+                                <input type="text" id="note-2" placeholder="หมายเหตุพิเศษ...">
+                                <button class="btn" onclick="addToCart('ตำปูปลาร้า', 50, 'spicy-2', 'note-2')">+ ใส่ตะกร้า</button>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-top: 16px;">
+                            <h3>⭐ ให้คะแนนและรีวิวความแซ่บ</h3>
+                            <div class="star-rating" id="review-stars">
+                                <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+                            </div>
+                            <textarea id="review-text" placeholder="เขียนรีวิวติชมร้านเราได้เลยครับ..." style="height: 70px; margin-bottom: 10px;"></textarea>
+                            <button class="btn" style="padding: 10px; font-size: 13px;" onclick="submitReview()">ส่งรีวิว</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= 2. ฝั่งพนักงานครัว & แอดมิน ================= -->
+            <div id="staff" class="section">
+                <div id="staff-login-box" class="card" style="max-width: 440px; margin: 40px auto;">
+                    <h3>🔐 ล็อกอินพนักงานครัว หรือ ผู้ดูแลระบบ</h3>
+                    <label>Username:</label>
+                    <input type="text" id="login-username" placeholder="กรอก Username (เช่น staff1, admin)">
+                    <label>Password:</label>
+                    <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน">
+                    <button class="btn" onclick="systemLogin()">เข้าสู่ระบบ</button>
+                    <p style="font-size: 11px; color: #747d8c; margin-top: 10px; text-align: center;">ค่าเริ่มต้น: admin / admin9999 หรือ staff1 / staff1234</p>
+                </div>
+
+                <!-- หน้าพนักงานครัว (Kitchen Portal) -->
+                <div id="staff-main-portal" style="display:none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div>
+                            <h3 style="margin: 0;">👨‍🍳 ครัวแซ่บเวอร์ (Kitchen Display)</h3>
+                            <span id="staff-login-user-lbl" style="font-size: 11px; color: #747d8c;"></span>
+                        </div>
+                        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="systemLogout()">ออกจากระบบ</button>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box" style="border-left-color: #ffa502;"><h4>รอดำเนินการ</h4><span id="st-wait">0</span></div>
+                        <div class="stat-box" style="border-left-color: #3742fa;"><h4>กำลังทำ</h4><span id="st-cooking">0</span></div>
+                    </div>
+
+                    <!-- กล่องข้อความแชทลูกค้าติดต่อแผนกครัว แยกรายบุคคลพร้อมระบุชื่อ -->
+                    <div class="card" style="border: 2px dashed var(--primary); background: #fff5f5;">
+                        <h3 style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>💬 ข้อความติดต่อ "แผนกครัว" (จากลูกค้า)</span>
+                            <span id="kitchen-unread-badge" class="badge" style="background:var(--primary); color:white; display:none;">0 ข้อความใหม่</span>
+                        </h3>
+                        <p style="font-size: 12px; color: #747d8c; margin-bottom: 10px;">เลือกรายชื่อลูกค้าด้านล่างเพื่อเปิดแชทสนทนารายบุคคล:</p>
+                        <div id="kitchen-chat-inbox" class="compact-scroll-box" style="max-height: 180px; background: white;">
+                            <p style="font-size: 12px; color: #747d8c; text-align: center;">ยังไม่มีลูกค้าติดต่อเรื่องอาหาร</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-sub-menu">
+                        <button id="sub-btn-active" class="active-sub" onclick="switchStaffSubTab('active')">คิวงานปัจจุบัน</button>
+                        <button id="sub-btn-history" onclick="switchStaffSubTab('history')">ประวัติออเดอร์เสร็จ/ยกเลิก</button>
+                    </div>
+
+                    <input type="text" id="staff-search" placeholder="🔍 ค้นหา (เลขออเดอร์, เบอร์, ชื่อลูกค้า)..." oninput="renderStaffOrders()" style="margin-bottom: 12px; padding: 10px;">
+
+                    <div id="staff-active-section">
+                        <h3>📋 คิวออเดอร์รันตามลำดับ</h3>
+                        <div class="card" style="padding: 10px;">
+                            <div class="compact-scroll-box">
+                                <div class="table-wrap">
+                                    <div id="staff-orders-container"><p style="color: #747d8c; font-size: 12px; text-align: center;">ไม่มีคิวงาน</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="staff-history-section" style="display:none;">
+                        <h3>📦 ประวัติออเดอร์ที่เสร็จ / ยกเลิกแล้ว</h3>
+                        <div class="card" style="padding: 10px;">
+                            <div class="compact-scroll-box">
+                                <div class="table-wrap">
+                                    <div id="staff-history-container"><p style="color: #747d8c; font-size: 12px; text-align: center;">ไม่มีประวัติย้อนหลัง</p></div>
+                                </div>
+                            </div>
+                            <button class="load-more-btn" onclick="expandStaffHistory()">🔽 โหลดรายการประวัติเพิ่มเติม</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- หน้าแอดมิน (Admin Portal) -->
+                <div id="admin-main-portal" style="display:none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div>
+                            <h3 style="margin: 0;">⚙️ ผู้ดูแลระบบ (Admin Dashboard)</h3>
+                            <span id="admin-login-user-lbl" style="font-size: 11px; color: #747d8c;"></span>
+                        </div>
+                        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="systemLogout()">ออกจากระบบ</button>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box"><h4>ยอดขายรวมปัจจุบัน</h4><span id="adm-current-sales">0 ฿</span></div>
+                        <div class="stat-box" style="border-left-color: #2ed573;"><h4>ออเดอร์ทั้งหมด</h4><span id="adm-orders">0</span></div>
+                    </div>
+
+                    <!-- กล่องข้อความแชทลูกค้าติดต่อแผนก Admin (แจ้งปัญหา/สอบถามทั่วไป) แยกรายบุคคล -->
+                    <div class="card" style="border: 2px dashed #3742fa; background: #f0f4ff; margin-bottom: 16px;">
+                        <h3 style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>💬 ข้อความติดต่อ "Admin" (แจ้งปัญหา/ช่วยเหลือ)</span>
+                            <span id="admin-unread-badge" class="badge" style="background:#3742fa; color:white; display:none;">0 ข้อความใหม่</span>
+                        </h3>
+                        <p style="font-size: 12px; color: #747d8c; margin-bottom: 10px;">เลือกรายชื่อลูกค้าเพื่อเปิดแชทแก้ไขปัญหา:</p>
+                        <div id="admin-chat-inbox" class="compact-scroll-box" style="max-height: 180px; background: white;">
+                            <p style="font-size: 12px; color: #747d8c; text-align: center;">ยังไม่มีลูกค้าติดต่อเรื่องปัญหา</p>
+                        </div>
+                    </div>
+
+                    <div class="responsive-grid-2">
+                        <div class="card">
+                            <h3>👥 จัดการผู้ใช้งาน & พนักงานในระบบ</h3>
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 12px; margin-bottom: 12px;">
+                                <label>เพิ่มพนักงาน / แอดมินใหม่:</label>
+                                <input type="text" id="new-username" placeholder="Username (เช่น staff2)" style="margin-bottom: 8px; padding: 10px;">
+                                <input type="password" id="new-password" placeholder="Password" style="margin-bottom: 8px; padding: 10px;">
+                                <select id="new-role" style="margin-bottom: 8px; padding: 10px;">
+                                    <option value="staff">พนักงานครัว (Staff)</option>
+                                    <option value="admin">แอดมิน (Admin)</option>
+                                </select>
+                                <button class="btn" style="padding: 10px; font-size: 13px;" onclick="addNewUser()">+ บันทึกเพิ่มผู้ใช้</button>
+                            </div>
+                            <h4 style="font-size: 13px; margin-top: 10px;">รายชื่อผู้ใช้ทั้งหมด:</h4>
+                            <div class="compact-scroll-box" style="max-height: 150px;">
+                                <div id="users-list-container"></div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>⭐ จัดการและดูรีวิว</h3>
+                            <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                                <button class="btn" style="padding: 8px; font-size: 11px;" onclick="filterAdminReviews('all')">ทั้งหมด</button>
+                                <button class="btn" style="padding: 8px; font-size: 11px; background: #f1c40f;" onclick="filterAdminReviews(5)">5★</button>
+                                <button class="btn" style="padding: 8px; font-size: 11px; background: #f39c12;" onclick="filterAdminReviews(4)">4★</button>
+                                <button class="btn" style="padding: 8px; font-size: 11px; background: #e67e22;" onclick="filterAdminReviews(3)">3★</button>
+                                <button class="btn" style="padding: 8px; font-size: 11px; background: #d35400;" onclick="filterAdminReviews(2)">2★</button>
+                                <button class="btn" style="padding: 8px; font-size: 11px; background: #c0392b;" onclick="filterAdminReviews(1)">1★</button>
+                            </div>
+                            
+                            <div class="compact-scroll-box" id="admin-reviews-scroll-box">
+                                <div id="admin-reviews-list"><p style="font-size: 12px; color: #747d8c; text-align: center;">ยังไม่มีรีวิว</p></div>
+                            </div>
+                            <button class="load-more-btn" onclick="expandAdminReviews()">🔽 โหลดรีวิวเพิ่มเติม</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📋 ออเดอร์ทั้งหมดในระบบ (แยกตามผู้ใช้)</h3>
+                        <div class="tab-sub-menu" style="margin-top: 8px;">
+                            <button id="adm-sub-btn-active" class="active-sub" onclick="switchAdminOrderTab('active')">ออเดอร์ที่ยังไม่ได้ทำ (รอ/กำลังทำ)</button>
+                            <button id="adm-sub-btn-done" onclick="switchAdminOrderTab('done')">ออเดอร์ที่ทำเสร็จ/ยกเลิกแล้ว</button>
+                        </div>
+                        <div class="compact-scroll-box">
+                            <div id="admin-orders-table-container"></div>
+                        </div>
+                        <button class="load-more-btn" onclick="expandAdminOrders()">🔽 โหลดออเดอร์เพิ่มเติม</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Floating Chat Button สำหรับฝั่งลูกค้า (มุมขวาล่าง) -->
+<button class="floating-chat-btn" id="floating-chat-toggle" onclick="toggleCustomerChat()" style="display:none;">
+    💬
+    <div class="chat-badge-dot" id="cust-chat-badge" style="display:none;">0</div>
+</button>
+
+        <!-- Floating Chat Window & AI Assistant สำหรับลูกค้า -->
+        <div class="chat-window" id="customer-chat-window">
+            <div class="chat-header">
+                <span id="chat-header-title">🤖 AI Assistant & แชทกับร้าน</span>
+                <button style="background:transparent; border:none; color:white; font-size:18px; cursor:pointer;" onclick="toggleCustomerChat()">✕</button>
+            </div>
+            <div class="chat-body" id="customer-chat-messages">
+                <!-- AI จะทักทายเมื่อเปิดแชทครั้งแรก -->
+            </div>
+            <div class="chat-footer" id="customer-chat-footer">
+                <input type="text" id="cust-chat-input" placeholder="พิมพ์ข้อความ..." onkeypress="handleCustChatKey(event)">
+                <button class="btn" onclick="sendCustomerChatMessage()">ส่ง</button>
+            </div>
+        </div>
+
+        <!-- Floating Chat Window สำหรับพนักงานครัวหรือแอดมิน (เมื่อกดเลือกตอบแชทลูกค้ารายบุคคล) -->
+        <div class="chat-window" id="staff-chat-window" style="width: 380px; height: 500px;">
+            <div class="chat-header" id="staff-chat-header-bar">
+                <span id="staff-chat-title">💬 แชทกับลูกค้า</span>
+                <button style="background:transparent; border:none; color:white; font-size:18px; cursor:pointer;" onclick="closeStaffChatWindow()">✕</button>
+            </div>
+            <div class="chat-body" id="staff-chat-messages"></div>
+            <div class="chat-footer">
+                <input type="text" id="staff-chat-input" placeholder="ตอบกลับลูกค้า..." onkeypress="handleStaffChatKey(event)">
+                <button class="btn" onclick="sendStaffChatMessage()">ส่ง</button>
+            </div>
+        </div>
+
+        <nav>
+            <button class="active" onclick="switchTab('customer', event)">
+                <span>📱</span> ลูกค้าสั่งอาหาร
+            </button>
+            <button onclick="switchTab('staff', event)">
+                <span>🔐</span> พนักงาน / แอดมิน
+            </button>
+        </nav>
+    </div>
+
+    <!-- Popup สำหรับขยายดูรายละเอียดออเดอร์ -->
+    <div class="popup-overlay" id="order-detail-popup">
+        <div class="popup-box">
+            <h3>📜 รายละเอียดออเดอร์</h3>
+            <div id="popup-content" style="font-size: 13px; margin-bottom: 16px; text-align: left;"></div>
+            <button class="btn btn-secondary" onclick="closePopup()">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+
+    <!-- Custom UI Alert Modal -->
+    <div class="popup-overlay" id="custom-alert-popup">
+        <div class="popup-box" style="max-width: 340px;">
+            <div id="custom-alert-icon" style="font-size: 40px; margin-bottom: 10px;">🔔</div>
+            <h3 id="custom-alert-title" style="font-size: 16px; margin-bottom: 8px; color: var(--dark);">แจ้งเตือน</h3>
+            <p id="custom-alert-msg" style="font-size: 13px; color: #57606f; margin-bottom: 20px; line-height: 1.5;"></p>
+            <button class="btn" onclick="closeCustomAlert()">ตกลง</button>
+        </div>
+    </div>
+
+    <script>
+        // ตรวจสอบและแสดงผลประเภทอุปกรณ์อัตโนมัติ (Responsive Device Detection)
+        function updateDeviceViewBadge() {
+            let width = window.innerWidth;
+            let badge = document.getElementById('device-type-badge');
+            if (width < 768) {
+                badge.innerText = "📱 Mobile View";
+            } else if (width >= 768 && width < 1024) {
+                badge.innerText = "タブเล็ต iPad View";
+            } else {
+                badge.innerText = "💻 Desktop / PC View";
+            }
+        }
+        window.addEventListener('resize', updateDeviceViewBadge);
+        window.addEventListener('DOMContentLoaded', updateDeviceViewBadge);
+        window.addEventListener('DOMContentLoaded', initFirebase);
+
+        function showCustomAlert(title, message, icon = "🔔") {
+            document.getElementById('custom-alert-title').innerText = title;
+            document.getElementById('custom-alert-msg').innerText = message;
+            document.getElementById('custom-alert-icon').innerText = icon;
+            document.getElementById('custom-alert-popup').style.display = 'flex';
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('custom-alert-popup').style.display = 'none';
+        }
+
+        // ==================================================================================
+        // 🔥 FIREBASE SETUP — ทำให้ระบบเป็นออนไลน์ ข้อมูลซิงค์เรียลไทม์ทุกอุปกรณ์/ทุกเครื่อง
+        // วิธีตั้งค่า (ฟรี ใช้เวลาไม่ถึง 5 นาที):
+        // 1. ไปที่ https://console.firebase.google.com -> สร้างโปรเจกต์ใหม่ (ปิด Google Analytics ก็ได้)
+        // 2. ในโปรเจกต์ กด "Build" -> "Firestore Database" -> "Create database" -> เลือกโหมด "Start in test mode"
+        // 3. กด ⚙️ (Project settings) -> เลื่อนลงมา "Your apps" -> กดไอคอน </> (Web) -> ตั้งชื่อแอป -> Register app
+        // 4. คัดลอกค่า firebaseConfig ที่ได้มาวางแทนที่ค่าด้านล่างนี้ทั้งหมด แล้วเซฟไฟล์ อัปโหลดขึ้น GitHub ได้เลย
+        // ==================================================================================
+        const firebaseConfig = {
+            apiKey: "วางค่า apiKey ของคุณที่นี่",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxx"
+        };
+
+        let db = null;
+        let firebaseReady = false;
+
+        function initFirebase() {
+            if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("วางค่า")) {
+                document.getElementById('sync-status-badge').innerText = "🔴 ยังไม่ตั้งค่า Firebase";
+                showCustomAlert(
+                    "ยังไม่ได้เชื่อมต่อระบบออนไลน์",
+                    "กรุณาตั้งค่า Firebase ก่อนใช้งาน โดยเปิดไฟล์นี้ด้วยโปรแกรมแก้ไขข้อความ แล้วมองหาคอมเมนต์ 'FIREBASE SETUP' ใกล้ท้ายไฟล์ (ในส่วน <script>) เพื่อดูขั้นตอน 4 ข้อ ระหว่างนี้ระบบจะยังทำงานแบบออฟไลน์ในเครื่องนี้เครื่องเดียวไปก่อน",
+                    "⚠️"
+                );
+                return;
+            }
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                firebaseReady = true;
+                document.getElementById('sync-status-badge').innerText = "🟢 ออนไลน์";
+                attachRealtimeListeners();
+                seedDefaultUsersIfEmpty();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('sync-status-badge').innerText = "🔴 เชื่อมต่อไม่สำเร็จ";
+            }
+        }
+
+        function seedDefaultUsersIfEmpty() {
+            db.collection('users').get().then(snap => {
+                if (snap.empty) {
+                    db.collection('users').doc('admin').set({ username: "admin", pass: "admin9999", role: "admin", online: false });
+                    db.collection('users').doc('staff1').set({ username: "staff1", pass: "staff1234", role: "staff", online: false });
+                }
+            }).catch(err => console.error(err));
+        }
+
+        function attachRealtimeListeners() {
+            // ออเดอร์ทั้งหมด — เรียงใหม่สุดก่อน
+            db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                globalOrders = snap.docs.map(d => d.data());
+                renderCustomerOrders();
+                renderStaffOrders();
+                renderStaffHistory();
+                updateAdminDashboard();
+                renderStaffChatInboxes();
+            }, err => console.error(err));
+
+            // รีวิวทั้งหมด — เรียงใหม่สุดก่อน
+            db.collection('reviews').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                globalReviews = snap.docs.map(d => d.data());
+                renderAdminReviews();
+            }, err => console.error(err));
+
+            // ผู้ใช้งาน (พนักงาน/แอดมิน)
+            db.collection('users').onSnapshot(snap => {
+                systemUsers = snap.docs.map(d => d.data());
+                renderUsersList();
+            }, err => console.error(err));
+
+            // แชททั้งหมด แยกตามเบอร์โทร
+            db.collection('chats').onSnapshot(snap => {
+                customerChats = {};
+                snap.docs.forEach(d => { customerChats[d.id] = d.data(); });
+                if (currentCustomer) renderActiveCustomerChatSession();
+                renderStaffChatInboxes();
+                if (activeStaffChat.phone) renderStaffChatMessages();
+            }, err => console.error(err));
+        }
+
+        let systemUsers = [
+            { username: "admin", pass: "admin9999", role: "admin", online: false },
+            { username: "staff1", pass: "staff1234", role: "staff", online: false }
+        ];
+
+        let loggedInUser = null;
+        let currentCustomer = null; 
+        
+        let customerCarts = {};    // ตะกร้าแยกตามเบอร์โทรลูกค้า (เก็บในเครื่อง ไม่ต้องซิงค์ก่อนสั่งซื้อจริง)
+        let globalOrders = [];     // ออเดอร์ทั้งหมด (ซิงค์จาก Firestore)
+        let globalReviews = [];    // รีวิว (ซิงค์จาก Firestore)
+        
+        // โครงสร้างแชทอัจฉริยะแยกตามแผนกและเบอร์โทรลูกค้า (ซิงค์จาก Firestore)
+        // { "0812345678": { department: 'kitchen'/'admin', messages: [...], unreadKitchen: true, unreadAdmin: true } }
+        let customerChats = {};    
+        let activeStaffChat = { phone: null, dept: null }; // แชทที่พนักงานกำลังเปิดคุยอยู่
+
+        let currentRating = 5;
+        let adminOrderTabState = 'active';
+        let reviewLimitCount = 4;
+        let staffHistoryLimitCount = 5;
+        let adminOrderLimitCount = 5;
+        let currentReviewFilter = 'all';
+
+        function switchTab(tabId, evt) {
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active-section'));
+    document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active-section');
+    if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+
+    // จัดการการแสดงผลปุ่มแชทลอย (ให้โผล่เฉพาะฝั่งลูกค้าและเมื่อล็อกอินแล้วเท่านั้น)
+    let chatBtn = document.getElementById('floating-chat-toggle');
+    let chatWin = document.getElementById('customer-chat-window');
+    
+    if (tabId === 'customer' && currentCustomer) {
+        chatBtn.style.display = 'flex';
+    } else {
+        chatBtn.style.display = 'none';
+        chatWin.style.display = 'none'; // ซ่อนหน้าต่างแชทลูกค้าด้วยถ้าเผลอเปิดค้างไว้
+    }
+}
+
+        function switchStaffSubTab(sub) {
+            if(sub === 'active') {
+                document.getElementById('staff-active-section').style.display = 'block';
+                document.getElementById('staff-history-section').style.display = 'none';
+                document.getElementById('sub-btn-active').classList.add('active-sub');
+                document.getElementById('sub-btn-history').classList.remove('active-sub');
+            } else {
+                document.getElementById('staff-active-section').style.display = 'none';
+                document.getElementById('staff-history-section').style.display = 'block';
+                document.getElementById('sub-btn-history').classList.add('active-sub');
+                document.getElementById('sub-btn-active').classList.remove('active-sub');
+                renderStaffHistory();
+            }
+        }
+
+        function switchAdminOrderTab(sub) {
+            adminOrderTabState = sub;
+            adminOrderLimitCount = 5;
+            if(sub === 'active') {
+                document.getElementById('adm-sub-btn-active').classList.add('active-sub');
+                document.getElementById('adm-sub-btn-done').classList.remove('active-sub');
+            } else {
+                document.getElementById('adm-sub-btn-done').classList.add('active-sub');
+                document.getElementById('adm-sub-btn-active').classList.remove('active-sub');
+            }
+            updateAdminDashboard();
+        }
+
+        // --- ระบบล็อกอินลูกค้า ---
+        function customerLogin() {
+            let nick = document.getElementById('cust-nickname').value;
+            let phone = document.getElementById('cust-phone').value;
+            if(!phone) { showCustomAlert("แจ้งเตือน", "กรุณากรอกเบอร์โทรศัพท์เพื่อแยกบัญชีของคุณด้วยครับ", "⚠️"); return; }
+            
+            currentCustomer = { name: nick || "ลูกค้าทั่วไป", phone: phone };
+            
+            if(!customerCarts[phone]) customerCarts[phone] = [];
+            if(!customerChats[phone]) {
+                let freshChat = {
+                    department: null, // 'kitchen' หรือ 'admin'
+                    messages: [],
+                    unreadKitchen: false,
+                    unreadAdmin: false
+                };
+                customerChats[phone] = freshChat;
+                if(firebaseReady) db.collection('chats').doc(phone).set(freshChat).catch(err => console.error(err));
+            }
+
+            document.getElementById('cust-login-box').style.display = 'none';
+            document.getElementById('cust-main-portal').style.display = 'block';
+            document.getElementById('floating-chat-toggle').style.display = 'flex';
+            document.getElementById('display-name').innerText = currentCustomer.name + " (" + currentCustomer.phone + ")";
+            
+            renderCart();
+            renderCustomerOrders();
+            initCustomerAIWand();
+        }
+
+        function customerLogout() {
+            currentCustomer = null;
+            document.getElementById('cust-nickname').value = '';
+            document.getElementById('cust-phone').value = '';
+            document.getElementById('cust-login-box').style.display = 'block';
+            document.getElementById('cust-main-portal').style.display = 'none';
+            document.getElementById('floating-chat-toggle').style.display = 'none';
+            document.getElementById('customer-chat-window').style.display = 'none';
+        }
+
+        // --- ระบบจัดการตะกร้าสินค้าเฉพาะบัญชีลูกค้า ---
+        function addToCart(menuName, price, spicyId, noteId) {
+            if(!currentCustomer) return;
+            let spicy = document.getElementById(spicyId).value;
+            let note = document.getElementById(noteId).value;
+            
+            if(!customerCarts[currentCustomer.phone]) customerCarts[currentCustomer.phone] = [];
+            customerCarts[currentCustomer.phone].push({ name: menuName, price: price, spicy: spicy, note: note });
+            renderCart();
+        }
+
+        function renderCart() {
+            if(!currentCustomer) return;
+            let container = document.getElementById('cart-container');
+            let checkoutSec = document.getElementById('checkout-section');
+            let cart = customerCarts[currentCustomer.phone] || [];
+
+            if(cart.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px; text-align: center;'>ไม่มีสินค้าในตะกร้า</p>";
+                checkoutSec.style.display = 'none';
+                return;
+            }
+            let html = `<table><tr><th>เมนู</th><th>ราคา</th><th>เผ็ด/โน้ต</th><th></th></tr>`;
+            let total = 0;
+            cart.forEach((item, index) => {
+                total += item.price;
+                html += `<tr>
+                    <td><b>${item.name}</b></td>
+                    <td>${item.price}฿</td>
+                    <td>${item.spicy}<br><small style="color:#747d8c;">${item.note || '-'}</small></td>
+                    <td><button style="background:#ff4757; color:white; border:none; padding:3px 6px; border-radius:4px; font-size:10px;" onclick="removeFromCart(${index})">ลบ</button></td>
+                </tr>`;
+            });
+            html += `</table><p style="margin-top:8px; font-size:13px; text-align:right;"><b>รวม: ${total} บาท</b></p>`;
+            container.innerHTML = html;
+            checkoutSec.style.display = 'block';
+        }
+
+        function removeFromCart(index) {
+            if(!currentCustomer) return;
+            customerCarts[currentCustomer.phone].splice(index, 1);
+            renderCart();
+        }
+
+        function togglePayment(method) {
+            document.getElementById('transfer-info').style.display = (method === 'โอนเงิน') ? 'block' : 'none';
+        }
+
+        function checkoutOrder() {
+            if(!currentCustomer) return;
+            if(!firebaseReady) { showCustomAlert("ยังไม่ได้เชื่อมต่อออนไลน์", "กรุณาตั้งค่า Firebase ก่อนสั่งซื้อ (ดูคอมเมนต์ FIREBASE SETUP ในไฟล์)", "⚠️"); return; }
+            let cart = customerCarts[currentCustomer.phone] || [];
+            if(cart.length === 0) return;
+
+            let payMethod = document.querySelector('input[name="pay-method"]:checked').value;
+            let orderId = "#A00" + (globalOrders.length + 1) + "-" + Date.now().toString().slice(-4);
+            let totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+            
+            let newOrder = {
+                id: orderId,
+                customer: currentCustomer.name,
+                phone: currentCustomer.phone,
+                items: [...cart],
+                total: totalAmount,
+                payment: payMethod,
+                status: "รอดำเนินการ",
+                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('orders').doc(orderId).set(newOrder).then(() => {
+                customerCarts[currentCustomer.phone] = [];
+                renderCart();
+                showCustomAlert("สำเร็จ", "ส่งคำสั่งซื้อเรียบร้อยแล้ว!", "🎉");
+            }).catch(err => {
+                console.error(err);
+                showCustomAlert("ผิดพลาด", "ส่งคำสั่งซื้อไม่สำเร็จ ลองใหม่อีกครั้ง", "❌");
+            });
+        }
+
+        function renderCustomerOrders() {
+            let container = document.getElementById('customer-orders-list');
+            if(!currentCustomer) return;
+            let myOrders = globalOrders.filter(o => o.phone === currentCustomer.phone);
+            if(myOrders.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px;'>ยังไม่มีประวัติออเดอร์</p>";
+                return;
+            }
+            let html = `<div class="table-wrap"><table><tr><th>ออเดอร์</th><th>ยอดเงิน</th><th>สถานะ</th><th>เวลา</th></tr>`;
+            myOrders.forEach(o => {
+                let badgeClass = "badge-wait";
+                if(o.status === "กำลังทำ") badgeClass = "badge-cooking";
+                else if(o.status === "เสร็จแล้ว") badgeClass = "badge-done";
+                else if(o.status === "ยกเลิก") badgeClass = "badge-cancel";
+                
+                html += `<tr>
+                    <td><b>${o.id}</b></td>
+                    <td>${o.total}฿</td>
+                    <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                    <td>${o.time}</td>
+                </tr>`;
+            });
+            html += `</table></div>`;
+            container.innerHTML = html;
+        }
+
+        function setRating(star) {
+            currentRating = star;
+            let stars = document.querySelectorAll('#review-stars span');
+            stars.forEach((s, idx) => {
+                if(idx < star) s.classList.add('selected');
+                else s.classList.remove('selected');
+            });
+        }
+
+        function submitReview() {
+            let text = document.getElementById('review-text').value;
+            if(!currentCustomer) { showCustomAlert("แจ้งเตือน", "กรุณาเข้าสู่ระบบก่อนรีวิว", "⚠️"); return; }
+            if(!text) { showCustomAlert("แจ้งเตือน", "กรุณากรอกข้อความรีวิว", "⚠️"); return; }
+            if(!firebaseReady) { showCustomAlert("ยังไม่ได้เชื่อมต่อออนไลน์", "กรุณาตั้งค่า Firebase ก่อนส่งรีวิว", "⚠️"); return; }
+            
+            db.collection('reviews').add({
+                name: currentCustomer.name,
+                phone: currentCustomer.phone,
+                rating: currentRating,
+                text: text,
+                date: new Date().toLocaleDateString('th-TH'),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('review-text').value = '';
+                showCustomAlert("สำเร็จ", "ขอบคุณสำหรับรีวิวครับ!", "⭐");
+            }).catch(err => {
+                console.error(err);
+                showCustomAlert("ผิดพลาด", "ส่งรีวิวไม่สำเร็จ ลองใหม่อีกครั้ง", "❌");
+            });
+        }
+
+        // --- ระบบ AI แชทบอทอัจฉริยะ คัดกรองแผนก (Smart AI Chat Routing) ---
+        function toggleCustomerChat() {
+            let win = document.getElementById('customer-chat-window');
+            if(win.style.display === 'flex') {
+                win.style.display = 'none';
+            } else {
+                win.style.display = 'flex';
+                initCustomerAIWand();
+            }
+        }
+
+        function initCustomerAIWand() {
+            if(!currentCustomer) return;
+            let chatData = customerChats[currentCustomer.phone];
+            let container = document.getElementById('customer-chat-messages');
+            
+            // ถ้ายังไม่เคยเลือกแผนก ให้ AI ทักทายและให้เลือกหัวข้อ
+            if(!chatData.department) {
+                let html = `<div class="chat-msg ai">
+                    สวัสดีครับคุณ <b>${currentCustomer.name}</b> 👋 AI แซ่บเวอร์ยินดีต้อนรับครับ คุณต้องการติดต่อเรื่องใดในวันนี้?
+                    <div class="chat-options">
+                        <button class="chat-option-btn" onclick="selectCustomerDepartment('kitchen')">🥗 สอบถามเรื่องอาหาร / เมนู / สั่งตำ</button>
+                        <button class="chat-option-btn" onclick="selectCustomerDepartment('admin')">⚙️ แจ้งปัญหา / ติดต่อแอดมิน / ร้องเรียน</button>
+                    </div>
+                </div>`;
+                container.innerHTML = html;
+                document.getElementById('customer-chat-footer').style.display = 'none';
+            } else {
+                renderActiveCustomerChatSession();
+            }
+        }
+
+        // บันทึกข้อมูลแชทของเบอร์นี้กลับขึ้น Firestore ทั้งก้อน (ให้ทุกอุปกรณ์เห็นเรียลไทม์)
+        function persistChat(phone) {
+            if(!firebaseReady) return;
+            db.collection('chats').doc(phone).set(customerChats[phone]).catch(err => console.error(err));
+        }
+
+        function selectCustomerDepartment(dept) {
+            if(!currentCustomer) return;
+            let chatData = customerChats[currentCustomer.phone];
+            chatData.department = dept;
+            let deptName = dept === 'kitchen' ? 'แผนกครัว 🥗' : 'Admin ⚙️';
+            
+            chatData.messages.push({
+                sender: 'ai',
+                text: `AI ได้ส่งต่อไปยัง ${deptName} เรียบร้อยแล้วครับ สามารถพิมพ์ข้อความสนทนาต่อได้เลย`,
+                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            document.getElementById('customer-chat-footer').style.display = 'flex';
+            renderActiveCustomerChatSession();
+            renderStaffChatInboxes(); // อัปเดตฝั่งพนักงานทันที
+            persistChat(currentCustomer.phone);
+        }
+
+        function sendCustomerChatMessage() {
+            if(!currentCustomer) return;
+            let input = document.getElementById('cust-chat-input');
+            let text = input.value.trim();
+            if(!text) return;
+
+            let chatData = customerChats[currentCustomer.phone];
+            chatData.messages.push({
+                sender: 'customer',
+                text: text,
+                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            // ตั้งค่าสถานะว่ามีข้อความใหม่ที่ยังไม่ได้อ่านฝั่งพนักงาน/แอดมิน
+            if(chatData.department === 'kitchen') chatData.unreadKitchen = true;
+            if(chatData.department === 'admin') chatData.unreadAdmin = true;
+
+            input.value = '';
+            renderActiveCustomerChatSession();
+            renderStaffChatInboxes();
+            persistChat(currentCustomer.phone);
+        }
+
+        function handleCustChatKey(e) {
+            if(e.key === 'Enter') sendCustomerChatMessage();
+        }
+
+        function renderActiveCustomerChatSession() {
+            if(!currentCustomer) return;
+            let container = document.getElementById('customer-chat-messages');
+            let chatData = customerChats[currentCustomer.phone];
+            
+            let html = `<div class="chat-msg ai" style="font-size:11px; padding:6px 10px; margin-bottom:4px;">
+                📌 กำลังติดต่อ: <b>${chatData.department === 'kitchen' ? 'แผนกครัว' : 'Admin'}</b> 
+                <span style="color:#0984e3; cursor:pointer; float:right;" onclick="resetCustomerDepartment()">[เปลี่ยนเรื่อง]</span>
+            </div>`;
+
+            chatData.messages.forEach(m => {
+                let cls = m.sender === 'customer' ? 'customer' : (m.sender === 'staff' ? 'staff' : 'ai');
+                html += `<div class="chat-msg ${cls}">
+                    <div>${m.text}</div>
+                    <div style="font-size:8px; opacity:0.7; text-align:right; margin-top:2px;">${m.time}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function resetCustomerDepartment() {
+            if(!currentCustomer) return;
+            customerChats[currentCustomer.phone].department = null;
+            customerChats[currentCustomer.phone].messages = [];
+            initCustomerAIWand();
+            persistChat(currentCustomer.phone);
+        }
+
+        // --- ระบบล็อกอินพนักงานครัวและแอดมิน ---
+        function systemLogin() {
+            let user = document.getElementById('login-username').value;
+            let pass = document.getElementById('login-password').value;
+            let found = systemUsers.find(u => u.username === user && u.pass === pass);
+            if(!found) { showCustomAlert("ผิดพลาด", "Username หรือ Password ไม่ถูกต้อง!", "❌"); return; }
+            
+            loggedInUser = found;
+            loggedInUser.online = true;
+            if(firebaseReady) db.collection('users').doc(found.username).update({ online: true }).catch(err => console.error(err));
+            document.getElementById('staff-login-box').style.display = 'none';
+            
+            if(loggedInUser.role === 'admin') {
+                document.getElementById('staff-main-portal').style.display = 'none';
+                document.getElementById('admin-main-portal').style.display = 'block';
+                document.getElementById('admin-login-user-lbl').innerText = "ผู้ใช้งาน: " + loggedInUser.username + " (Admin)";
+                updateAdminDashboard();
+                renderUsersList();
+                renderAdminReviews();
+                renderStaffChatInboxes();
+            } else {
+                document.getElementById('staff-main-portal').style.display = 'block';
+                document.getElementById('admin-main-portal').style.display = 'none';
+                document.getElementById('staff-login-user-lbl').innerText = "ผู้ใช้งาน: " + loggedInUser.username + " (Staff)";
+                renderStaffOrders();
+                renderStaffHistory();
+                renderStaffChatInboxes();
+            }
+            updateKitchenStats();
+        }
+
+        function systemLogout() {
+            if(loggedInUser) {
+                if(firebaseReady) db.collection('users').doc(loggedInUser.username).update({ online: false }).catch(err => console.error(err));
+                loggedInUser.online = false;
+            }
+            loggedInUser = null;
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('staff-login-box').style.display = 'block';
+            document.getElementById('staff-main-portal').style.display = 'none';
+            document.getElementById('admin-main-portal').style.display = 'none';
+            document.getElementById('staff-chat-window').style.display = 'none';
+        }
+
+        function updateKitchenStats() {
+            let waitCount = globalOrders.filter(o => o.status === 'รอดำเนินการ').length;
+            let cookCount = globalOrders.filter(o => o.status === 'กำลังทำ').length;
+            document.getElementById('st-wait').innerText = waitCount;
+            document.getElementById('st-cooking').innerText = cookCount;
+        }
+
+        // --- แสดงรายชื่อลูกค้าที่ติดต่อเข้ามาใน Inbox ของพนักงานและแอดมิน ---
+        function renderStaffChatInboxes() {
+            let phones = Object.keys(customerChats);
+            
+            // 1. กรองสำหรับแผนกครัว (Kitchen Inbox)
+            let kitchenContainer = document.getElementById('kitchen-chat-inbox');
+            let kitchenPhones = phones.filter(p => customerChats[p].department === 'kitchen');
+            let kitchenUnreadCount = 0;
+
+            if(kitchenPhones.length === 0) {
+                kitchenContainer.innerHTML = `<p style="font-size: 12px; color: #747d8c; text-align: center;">ยังไม่มีลูกค้าติดต่อเรื่องอาหาร</p>`;
+                document.getElementById('kitchen-unread-badge').style.display = 'none';
+            } else {
+                let html = "";
+                kitchenPhones.forEach(phone => {
+                    let chatObj = customerChats[phone];
+                    if(chatObj.unreadKitchen) kitchenUnreadCount++;
+                    let lastMsg = chatObj.messages.length > 0 ? chatObj.messages[chatObj.messages.length - 1].text : "ส่งหัวข้อแล้ว";
+                    let matchedOrder = globalOrders.find(o => o.phone === phone);
+                    let custName = matchedOrder ? matchedOrder.customer : ("ลูกค้า " + phone);
+
+                    html += `<div class="chat-inbox-item" onclick="openStaffChatWindow('${phone}', 'kitchen', '${custName}')">
+                        <div>
+                            <div style="font-weight:700; font-size:13px;">
+                                ${chatObj.unreadKitchen ? '<span class="chat-unread-dot"></span>' : ''}👤 ${custName} (${phone})
+                            </div>
+                            <div style="font-size:11px; color:#57606f; margin-top:2px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lastMsg}</div>
+                        </div>
+                        <button class="btn" style="padding: 6px 10px; font-size: 11px; width:auto;">ตอบแชท</button>
+                    </div>`;
+                });
+                kitchenContainer.innerHTML = html;
+                let badge = document.getElementById('kitchen-unread-badge');
+                if(kitchenUnreadCount > 0) {
+                    badge.innerText = kitchenUnreadCount + " ข้อความใหม่";
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // 2. กรองสำหรับ Admin Inbox (ปัญหา/ช่วยเหลือ)
+            let adminContainer = document.getElementById('admin-chat-inbox');
+            if(adminContainer) {
+                let adminPhones = phones.filter(p => customerChats[p].department === 'admin');
+                let adminUnreadCount = 0;
+
+                if(adminPhones.length === 0) {
+                    adminContainer.innerHTML = `<p style="font-size: 12px; color: #747d8c; text-align: center;">ยังไม่มีลูกค้าติดต่อเรื่องปัญหา</p>`;
+                    document.getElementById('admin-unread-badge').style.display = 'none';
+                } else {
+                    let html = "";
+                    adminPhones.forEach(phone => {
+                        let chatObj = customerChats[phone];
+                        if(chatObj.unreadAdmin) adminUnreadCount++;
+                        let lastMsg = chatObj.messages.length > 0 ? chatObj.messages[chatObj.messages.length - 1].text : "แจ้งปัญหา";
+                        let matchedOrder = globalOrders.find(o => o.phone === phone);
+                        let custName = matchedOrder ? matchedOrder.customer : ("ลูกค้า " + phone);
+
+                        html += `<div class="chat-inbox-item" onclick="openStaffChatWindow('${phone}', 'admin', '${custName}')">
+                            <div>
+                                <div style="font-weight:700; font-size:13px;">
+                                    ${chatObj.unreadAdmin ? '<span class="chat-unread-dot" style="background:#3742fa;"></span>' : ''}👤 ${custName} (${phone})
+                                </div>
+                                <div style="font-size:11px; color:#57606f; margin-top:2px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lastMsg}</div>
+                            </div>
+                            <button class="btn" style="padding: 6px 10px; font-size: 11px; width:auto; background:#3742fa;">แก้ไขปัญหา</button>
+                        </div>`;
+                    });
+                    adminContainer.innerHTML = html;
+                    let badge = document.getElementById('admin-unread-badge');
+                    if(adminUnreadCount > 0) {
+                        badge.innerText = adminUnreadCount + " ข้อความใหม่";
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        function openStaffChatWindow(phone, dept, name) {
+            activeStaffChat = { phone: phone, dept: dept };
+            // เคลียร์สถานะการแจ้งเตือนว่าอ่านแล้ว
+            if(dept === 'kitchen') customerChats[phone].unreadKitchen = false;
+            if(dept === 'admin') customerChats[phone].unreadAdmin = false;
+            
+            document.getElementById('staff-chat-title').innerText = `💬 แชท (${dept === 'kitchen' ? 'ครัว' : 'Admin'}) : ${name}`;
+            document.getElementById('staff-chat-window').style.display = 'flex';
+            renderStaffChatMessages();
+            renderStaffChatInboxes();
+            persistChat(phone);
+        }
+
+        function closeStaffChatWindow() {
+            document.getElementById('staff-chat-window').style.display = 'none';
+            activeStaffChat = { phone: null, dept: null };
+        }
+
+        function sendStaffChatMessage() {
+            if(!activeStaffChat.phone) return;
+            let input = document.getElementById('staff-chat-input');
+            let text = input.value.trim();
+            if(!text) return;
+
+            let chatData = customerChats[activeStaffChat.phone];
+            chatData.messages.push({
+                sender: 'staff',
+                text: text,
+                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            input.value = '';
+            renderStaffChatMessages();
+            if(currentCustomer && currentCustomer.phone === activeStaffChat.phone) {
+                renderActiveCustomerChatSession();
+            }
+            persistChat(activeStaffChat.phone);
+        }
+
+        function handleStaffChatKey(e) {
+            if(e.key === 'Enter') sendStaffChatMessage();
+        }
+
+        function renderStaffChatMessages() {
+            if(!activeStaffChat.phone) return;
+            let container = document.getElementById('staff-chat-messages');
+            let chatData = customerChats[activeStaffChat.phone];
+            
+            let html = "";
+            chatData.messages.forEach(m => {
+                let cls = m.sender === 'customer' ? 'customer' : (m.sender === 'staff' ? 'staff' : 'ai');
+                html += `<div class="chat-msg ${cls}">
+                    <div>${m.text}</div>
+                    <div style="font-size:8px; opacity:0.7; text-align:right; margin-top:2px;">${m.time}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderStaffOrders() {
+            updateKitchenStats();
+            let search = document.getElementById('staff-search').value.toLowerCase();
+            let container = document.getElementById('staff-orders-container');
+            let activeOrders = globalOrders.filter(o => o.status === 'รอดำเนินการ' || o.status === 'กำลังทำ');
+            
+            if(search) {
+                activeOrders = activeOrders.filter(o => o.id.toLowerCase().includes(search) || o.customer.toLowerCase().includes(search) || o.phone.includes(search));
+            }
+
+            if(activeOrders.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px; text-align: center;'>ไม่มีคิวงาน</p>";
+                return;
+            }
+
+            let html = `<table><tr><th>คิว</th><th>ลูกค้า (เบอร์)</th><th>เมนู</th><th>สถานะ</th><th>จัดการ</th></tr>`;
+            activeOrders.forEach(o => {
+                let menuSummary = o.items.map(i => `${i.name} (${i.spicy})`).join(', ');
+                let nextStatusBtn = "";
+                if(o.status === 'รอดำเนินการ') {
+                    nextStatusBtn = `<button class="btn" style="padding: 6px 10px; font-size: 11px; background: #3742fa;" onclick="updateOrderStatus('${o.id}', 'กำลังทำ')">เริ่มทำ</button>`;
+                } else if(o.status === 'กำลังทำ') {
+                    nextStatusBtn = `<button class="btn btn-success" style="padding: 6px 10px; font-size: 11px;" onclick="updateOrderStatus('${o.id}', 'เสร็จแล้ว')">เสร็จ</button>`;
+                }
+                
+                html += `<tr>
+                    <td><b>${o.id}</b></td>
+                    <td>${o.customer}<br><small>${o.phone}</small></td>
+                    <td><span style="cursor:pointer; color:#0984e3;" onclick="showOrderDetail('${o.id}')">${menuSummary.substring(0, 25)}...</span></td>
+                    <td><span class="badge ${o.status === 'รอดำเนินการ' ? 'badge-wait' : 'badge-cooking'}">${o.status}</span></td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            ${nextStatusBtn}
+                            <button class="btn btn-secondary" style="padding: 6px 8px; font-size: 11px;" onclick="updateOrderStatus('${o.id}', 'ยกเลิก')">ยกเลิก</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        function renderStaffHistory() {
+            let container = document.getElementById('staff-history-container');
+            let historyOrders = globalOrders.filter(o => o.status === 'เสร็จแล้ว' || o.status === 'ยกเลิก');
+            
+            if(historyOrders.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px; text-align: center;'>ไม่มีประวัติย้อนหลัง</p>";
+                return;
+            }
+
+            let slicedOrders = historyOrders.slice(0, staffHistoryLimitCount);
+            let html = `<table><tr><th>คิว</th><th>ลูกค้า</th><th>ยอดเงิน</th><th>สถานะ</th></tr>`;
+            slicedOrders.forEach(o => {
+                let badgeClass = o.status === 'เสร็จแล้ว' ? 'badge-done' : 'badge-cancel';
+                html += `<tr>
+                    <td><b>${o.id}</b></td>
+                    <td>${o.customer} (${o.phone})</td>
+                    <td>${o.total}฿</td>
+                    <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        function expandStaffHistory() {
+            staffHistoryLimitCount += 5;
+            renderStaffHistory();
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            if(!firebaseReady) return;
+            db.collection('orders').doc(orderId).update({ status: newStatus }).catch(err => console.error(err));
+            // ไม่ต้อง render เองเพราะ onSnapshot จะอัปเดตให้ทุกอุปกรณ์อัตโนมัติ
+        }
+
+        function showOrderDetail(orderId) {
+            let target = globalOrders.find(o => o.id === orderId);
+            if(!target) return;
+            let content = `<p><b>เลขออเดอร์:</b> ${target.id}</p>
+                           <p><b>ลูกค้า:</b> ${target.customer} (${target.phone})</p>
+                           <p><b>เวลา:</b> ${target.time}</p>
+                           <p><b>การชำระเงิน:</b> ${target.payment}</p>
+                           <hr style="margin: 10px 0; border:0; border-top:1px solid var(--gray);">
+                           <p><b>รายการอาหาร:</b></p><ul>`;
+            target.items.forEach(i => {
+                content += `<li>${i.name} - ${i.price}฿ (ระดับเผ็ด: ${i.spicy}) ${i.note ? '<br><small>โน้ต: ' + i.note + '</small>' : ''}</li>`;
+            });
+            content += `</ul><p style="margin-top:10px; text-align:right;"><b>ยอดรวมทั้งหมด: ${target.total} บาท</b></p>`;
+            document.getElementById('popup-content').innerHTML = content;
+            document.getElementById('order-detail-popup').style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('order-detail-popup').style.display = 'none';
+        }
+
+        function updateAdminDashboard() {
+            let totalSales = globalOrders.filter(o => o.status === 'เสร็จแล้ว').reduce((sum, o) => sum + o.total, 0);
+            document.getElementById('adm-current-sales').innerText = totalSales + " ฿";
+            document.getElementById('adm-orders').innerText = globalOrders.length;
+
+            let container = document.getElementById('admin-orders-table-container');
+            let displayOrders = [];
+            if(adminOrderTabState === 'active') {
+                displayOrders = globalOrders.filter(o => o.status === 'รอดำเนินการ' || o.status === 'กำลังทำ');
+            } else {
+                displayOrders = globalOrders.filter(o => o.status === 'เสร็จแล้ว' || o.status === 'ยกเลิก');
+            }
+
+            if(displayOrders.length === 0) {
+                container.innerHTML = "<p style='color: #747d8c; font-size: 12px; text-align: center;'>ไม่มีออเดอร์ในหมวดหมู่นี้</p>";
+                return;
+            }
+
+            let slicedOrders = displayOrders.slice(0, adminOrderLimitCount);
+            let html = `<table><tr><th>ออเดอร์</th><th>ลูกค้า</th><th>ยอด</th><th>สถานะ</th></tr>`;
+            slicedOrders.forEach(o => {
+                let badgeClass = "badge-wait";
+                if(o.status === 'กำลังทำ') badgeClass = "badge-cooking";
+                else if(o.status === 'เสร็จแล้ว') badgeClass = "badge-done";
+                else if(o.status === 'ยกเลิก') badgeClass = "badge-cancel";
+
+                html += `<tr>
+                    <td><b style="cursor:pointer; color:#0984e3;" onclick="showOrderDetail('${o.id}')">${o.id}</b></td>
+                    <td>${o.customer} (${o.phone})</td>
+                    <td>${o.total}฿</td>
+                    <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        function expandAdminOrders() {
+            adminOrderLimitCount += 5;
+            updateAdminDashboard();
+        }
+
+        function addNewUser() {
+            let u = document.getElementById('new-username').value;
+            let p = document.getElementById('new-password').value;
+            let r = document.getElementById('new-role').value;
+            if(!u || !p) { showCustomAlert("แจ้งเตือน", "กรุณากรอก Username และ Password", "⚠️"); return; }
+            if(!firebaseReady) { showCustomAlert("ยังไม่ได้เชื่อมต่อออนไลน์", "กรุณาตั้งค่า Firebase ก่อน", "⚠️"); return; }
+            if(systemUsers.some(user => user.username === u)) { showCustomAlert("แจ้งเตือน", "Username นี้มีอยู่แล้ว", "⚠️"); return; }
+            
+            db.collection('users').doc(u).set({ username: u, pass: p, role: r, online: false }).then(() => {
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+                showCustomAlert("สำเร็จ", "เพิ่มพนักงานเรียบร้อยแล้ว", "✅");
+            }).catch(err => {
+                console.error(err);
+                showCustomAlert("ผิดพลาด", "เพิ่มพนักงานไม่สำเร็จ", "❌");
+            });
+        }
+
+        function renderUsersList() {
+            let container = document.getElementById('users-list-container');
+            let html = `<table><tr><th>Username</th><th>Role</th><th>สถานะ</th><th>จัดการ</th></tr>`;
+            systemUsers.forEach((u, idx) => {
+                html += `<tr>
+                    <td><b>${u.username}</b></td>
+                    <td>${u.role}</td>
+                    <td>${u.online ? '<span class="badge badge-done">ออนไลน์</span>' : '<span class="badge badge-cancel">ออฟไลน์</span>'}</td>
+                    <td>${u.username !== 'admin' ? `<button style="background:#ff4757; color:white; border:none; padding:4px 8px; border-radius:6px; font-size:11px;" onclick="deleteUser(${idx})">ลบ</button>` : '-'}</td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        function deleteUser(index) {
+            if(systemUsers[index].username === 'admin') return;
+            if(!firebaseReady) return;
+            db.collection('users').doc(systemUsers[index].username).delete().catch(err => console.error(err));
+        }
+
+        function filterAdminReviews(rating) {
+            currentReviewFilter = rating;
+            reviewLimitCount = 4;
+            renderAdminReviews();
+        }
+
+        function renderAdminReviews() {
+            let container = document.getElementById('admin-reviews-list');
+            let filtered = globalReviews;
+            if(currentReviewFilter !== 'all') {
+                filtered = globalReviews.filter(r => r.rating === currentReviewFilter);
+            }
+
+            if(filtered.length === 0) {
+                container.innerHTML = "<p style='font-size: 12px; color: #747d8c; text-align: center;'>ยังไม่มีรีวิว</p>";
+                return;
+            }
+
+            let slicedReviews = filtered.slice(0, reviewLimitCount);
+            let html = "";
+            slicedReviews.forEach(r => {
+                let starsStr = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+                html += `<div style="background:#fff; border:1px solid var(--gray); padding:10px; border-radius:12px; margin-bottom:8px; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600;">
+                        <span>${r.name} (${r.phone})</span>
+                        <span style="color:#f1c40f;">${starsStr}</span>
+                    </div>
+                    <p style="font-size:12px; color:#57606f; margin-top:4px;">${r.text}</p>
+                    <small style="font-size:10px; color:#b2bec3;">${r.date}</small>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function expandAdminReviews() {
+            reviewLimitCount += 4;
+            renderAdminReviews();
+        }
+    </script>
+</body>
+</html>
