@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🌶️ ส้มตำแซ่บเวอร์ - Omni-Device & Smart AI Routing Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase (ทำให้ระบบทำงานออนไลน์ ข้อมูลซิงค์เรียลไทม์ทุกอุปกรณ์) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --primary: #ff4757;
@@ -395,7 +398,10 @@
     <div class="app-container" id="main-app-frame">
         <header id="main-header">
             <h1>🌶️ ส้มตำแซ่บเวอร์</h1>
-            <div class="device-indicator" id="device-type-badge">📱 Mobile View</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="device-indicator" id="sync-status-badge" title="สถานะการเชื่อมต่อฐานข้อมูลออนไลน์">🔴 ยังไม่เชื่อมต่อ</div>
+                <div class="device-indicator" id="device-type-badge">📱 Mobile View</div>
+            </div>
         </header>
 
         <div class="content-area">
@@ -711,6 +717,7 @@
         }
         window.addEventListener('resize', updateDeviceViewBadge);
         window.addEventListener('DOMContentLoaded', updateDeviceViewBadge);
+        window.addEventListener('DOMContentLoaded', initFirebase);
 
         function showCustomAlert(title, message, icon = "🔔") {
             document.getElementById('custom-alert-title').innerText = title;
@@ -723,6 +730,91 @@
             document.getElementById('custom-alert-popup').style.display = 'none';
         }
 
+        // ==================================================================================
+        // 🔥 FIREBASE SETUP — ทำให้ระบบเป็นออนไลน์ ข้อมูลซิงค์เรียลไทม์ทุกอุปกรณ์/ทุกเครื่อง
+        // วิธีตั้งค่า (ฟรี ใช้เวลาไม่ถึง 5 นาที):
+        // 1. ไปที่ https://console.firebase.google.com -> สร้างโปรเจกต์ใหม่ (ปิด Google Analytics ก็ได้)
+        // 2. ในโปรเจกต์ กด "Build" -> "Firestore Database" -> "Create database" -> เลือกโหมด "Start in test mode"
+        // 3. กด ⚙️ (Project settings) -> เลื่อนลงมา "Your apps" -> กดไอคอน </> (Web) -> ตั้งชื่อแอป -> Register app
+        // 4. คัดลอกค่า firebaseConfig ที่ได้มาวางแทนที่ค่าด้านล่างนี้ทั้งหมด แล้วเซฟไฟล์ อัปโหลดขึ้น GitHub ได้เลย
+        // ==================================================================================
+        const firebaseConfig = {
+            apiKey: "วางค่า apiKey ของคุณที่นี่",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxx"
+        };
+
+        let db = null;
+        let firebaseReady = false;
+
+        function initFirebase() {
+            if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("วางค่า")) {
+                document.getElementById('sync-status-badge').innerText = "🔴 ยังไม่ตั้งค่า Firebase";
+                showCustomAlert(
+                    "ยังไม่ได้เชื่อมต่อระบบออนไลน์",
+                    "กรุณาตั้งค่า Firebase ก่อนใช้งาน โดยเปิดไฟล์นี้ด้วยโปรแกรมแก้ไขข้อความ แล้วมองหาคอมเมนต์ 'FIREBASE SETUP' ใกล้ท้ายไฟล์ (ในส่วน <script>) เพื่อดูขั้นตอน 4 ข้อ ระหว่างนี้ระบบจะยังทำงานแบบออฟไลน์ในเครื่องนี้เครื่องเดียวไปก่อน",
+                    "⚠️"
+                );
+                return;
+            }
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                firebaseReady = true;
+                document.getElementById('sync-status-badge').innerText = "🟢 ออนไลน์";
+                attachRealtimeListeners();
+                seedDefaultUsersIfEmpty();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('sync-status-badge').innerText = "🔴 เชื่อมต่อไม่สำเร็จ";
+            }
+        }
+
+        function seedDefaultUsersIfEmpty() {
+            db.collection('users').get().then(snap => {
+                if (snap.empty) {
+                    db.collection('users').doc('admin').set({ username: "admin", pass: "admin9999", role: "admin", online: false });
+                    db.collection('users').doc('staff1').set({ username: "staff1", pass: "staff1234", role: "staff", online: false });
+                }
+            }).catch(err => console.error(err));
+        }
+
+        function attachRealtimeListeners() {
+            // ออเดอร์ทั้งหมด — เรียงใหม่สุดก่อน
+            db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                globalOrders = snap.docs.map(d => d.data());
+                renderCustomerOrders();
+                renderStaffOrders();
+                renderStaffHistory();
+                updateAdminDashboard();
+                renderStaffChatInboxes();
+            }, err => console.error(err));
+
+            // รีวิวทั้งหมด — เรียงใหม่สุดก่อน
+            db.collection('reviews').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                globalReviews = snap.docs.map(d => d.data());
+                renderAdminReviews();
+            }, err => console.error(err));
+
+            // ผู้ใช้งาน (พนักงาน/แอดมิน)
+            db.collection('users').onSnapshot(snap => {
+                systemUsers = snap.docs.map(d => d.data());
+                renderUsersList();
+            }, err => console.error(err));
+
+            // แชททั้งหมด แยกตามเบอร์โทร
+            db.collection('chats').onSnapshot(snap => {
+                customerChats = {};
+                snap.docs.forEach(d => { customerChats[d.id] = d.data(); });
+                if (currentCustomer) renderActiveCustomerChatSession();
+                renderStaffChatInboxes();
+                if (activeStaffChat.phone) renderStaffChatMessages();
+            }, err => console.error(err));
+        }
+
         let systemUsers = [
             { username: "admin", pass: "admin9999", role: "admin", online: false },
             { username: "staff1", pass: "staff1234", role: "staff", online: false }
@@ -731,11 +823,11 @@
         let loggedInUser = null;
         let currentCustomer = null; 
         
-        let customerCarts = {};    // ตะกร้าแยกตามเบอร์โทรลูกค้า
-        let globalOrders = [];     // ออเดอร์ทั้งหมด
-        let globalReviews = [];    // รีวิว
+        let customerCarts = {};    // ตะกร้าแยกตามเบอร์โทรลูกค้า (เก็บในเครื่อง ไม่ต้องซิงค์ก่อนสั่งซื้อจริง)
+        let globalOrders = [];     // ออเดอร์ทั้งหมด (ซิงค์จาก Firestore)
+        let globalReviews = [];    // รีวิว (ซิงค์จาก Firestore)
         
-        // โครงสร้างแชทอัจฉริยะแยกตามแผนกและเบอร์โทรลูกค้า
+        // โครงสร้างแชทอัจฉริยะแยกตามแผนกและเบอร์โทรลูกค้า (ซิงค์จาก Firestore)
         // { "0812345678": { department: 'kitchen'/'admin', messages: [...], unreadKitchen: true, unreadAdmin: true } }
         let customerChats = {};    
         let activeStaffChat = { phone: null, dept: null }; // แชทที่พนักงานกำลังเปิดคุยอยู่
@@ -803,12 +895,14 @@
             
             if(!customerCarts[phone]) customerCarts[phone] = [];
             if(!customerChats[phone]) {
-                customerChats[phone] = {
+                let freshChat = {
                     department: null, // 'kitchen' หรือ 'admin'
                     messages: [],
                     unreadKitchen: false,
                     unreadAdmin: false
                 };
+                customerChats[phone] = freshChat;
+                if(firebaseReady) db.collection('chats').doc(phone).set(freshChat).catch(err => console.error(err));
             }
 
             document.getElementById('cust-login-box').style.display = 'none';
@@ -881,11 +975,12 @@
 
         function checkoutOrder() {
             if(!currentCustomer) return;
+            if(!firebaseReady) { showCustomAlert("ยังไม่ได้เชื่อมต่อออนไลน์", "กรุณาตั้งค่า Firebase ก่อนสั่งซื้อ (ดูคอมเมนต์ FIREBASE SETUP ในไฟล์)", "⚠️"); return; }
             let cart = customerCarts[currentCustomer.phone] || [];
             if(cart.length === 0) return;
 
             let payMethod = document.querySelector('input[name="pay-method"]:checked').value;
-            let orderId = "#A00" + (globalOrders.length + 1);
+            let orderId = "#A00" + (globalOrders.length + 1) + "-" + Date.now().toString().slice(-4);
             let totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
             
             let newOrder = {
@@ -896,17 +991,18 @@
                 total: totalAmount,
                 payment: payMethod,
                 status: "รอดำเนินการ",
-                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+                time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            globalOrders.unshift(newOrder);
-            customerCarts[currentCustomer.phone] = [];
-            
-            renderCart();
-            renderCustomerOrders();
-            renderStaffOrders();
-            updateAdminDashboard();
-            showCustomAlert("สำเร็จ", "ส่งคำสั่งซื้อเรียบร้อยแล้ว!", "🎉");
+            db.collection('orders').doc(orderId).set(newOrder).then(() => {
+                customerCarts[currentCustomer.phone] = [];
+                renderCart();
+                showCustomAlert("สำเร็จ", "ส่งคำสั่งซื้อเรียบร้อยแล้ว!", "🎉");
+            }).catch(err => {
+                console.error(err);
+                showCustomAlert("ผิดพลาด", "ส่งคำสั่งซื้อไม่สำเร็จ ลองใหม่อีกครั้ง", "❌");
+            });
         }
 
         function renderCustomerOrders() {
@@ -948,17 +1044,22 @@
             let text = document.getElementById('review-text').value;
             if(!currentCustomer) { showCustomAlert("แจ้งเตือน", "กรุณาเข้าสู่ระบบก่อนรีวิว", "⚠️"); return; }
             if(!text) { showCustomAlert("แจ้งเตือน", "กรุณากรอกข้อความรีวิว", "⚠️"); return; }
+            if(!firebaseReady) { showCustomAlert("ยังไม่ได้เชื่อมต่อออนไลน์", "กรุณาตั้งค่า Firebase ก่อนส่งรีวิว", "⚠️"); return; }
             
-            globalReviews.unshift({
+            db.collection('reviews').add({
                 name: currentCustomer.name,
                 phone: currentCustomer.phone,
                 rating: currentRating,
                 text: text,
-                date: new Date().toLocaleDateString('th-TH')
+                date: new Date().toLocaleDateString('th-TH'),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('review-text').value = '';
+                showCustomAlert("สำเร็จ", "ขอบคุณสำหรับรีวิวครับ!", "⭐");
+            }).catch(err => {
+                console.error(err);
+                showCustomAlert("ผิดพลาด", "ส่งรีวิวไม่สำเร็จ ลองใหม่อีกครั้ง", "❌");
             });
-            document.getElementById('review-text').value = '';
-            showCustomAlert("สำเร็จ", "ขอบคุณสำหรับรีวิวครับ!", "⭐");
-            renderAdminReviews();
         }
 
         // --- ระบบ AI แชทบอทอัจฉริยะ คัดกรองแผนก (Smart AI Chat Routing) ---
@@ -993,6 +1094,12 @@
             }
         }
 
+        // บันทึกข้อมูลแชทของเบอร์นี้กลับขึ้น Firestore ทั้งก้อน (ให้ทุกอุปกรณ์เห็นเรียลไทม์)
+        function persistChat(phone) {
+            if(!firebaseReady) return;
+            db.collection('chats').doc(phone).set(customerChats[phone]).catch(err => console.error(err));
+        }
+
         function selectCustomerDepartment(dept) {
             if(!currentCustomer) return;
             let chatData = customerChats[currentCustomer.phone];
@@ -1008,6 +1115,7 @@
             document.getElementById('customer-chat-footer').style.display = 'flex';
             renderActiveCustomerChatSession();
             renderStaffChatInboxes(); // อัปเดตฝั่งพนักงานทันที
+            persistChat(currentCustomer.phone);
         }
 
         function sendCustomerChatMessage() {
@@ -1030,6 +1138,7 @@
             input.value = '';
             renderActiveCustomerChatSession();
             renderStaffChatInboxes();
+            persistChat(currentCustomer.phone);
         }
 
         function handleCustChatKey(e) {
@@ -1062,6 +1171,7 @@
             customerChats[currentCustomer.phone].department = null;
             customerChats[currentCustomer.phone].messages = [];
             initCustomerAIWand();
+            persistChat(currentCustomer.phone);
         }
 
         // --- ระบบล็อกอินพนักงานครัวและแอดมิน ---
@@ -1073,6 +1183,7 @@
             
             loggedInUser = found;
             loggedInUser.online = true;
+            if(firebaseReady) db.collection('users').doc(found.username).update({ online: true }).catch(err => console.error(err));
             document.getElementById('staff-login-box').style.display = 'none';
             
             if(loggedInUser.role === 'admin') {
@@ -1095,7 +1206,10 @@
         }
 
         function systemLogout() {
-            if(loggedInUser) loggedInUser.online = false;
+            if(loggedInUser) {
+                if(firebaseReady) db.collection('users').doc(loggedInUser.username).update({ online: false }).catch(err => console.error(err));
+                loggedInUser.online = false;
+            }
             loggedInUser = null;
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
@@ -1203,6 +1317,7 @@
             document.getElementById('staff-chat-window').style.display = 'flex';
             renderStaffChatMessages();
             renderStaffChatInboxes();
+            persistChat(phone);
         }
 
         function closeStaffChatWindow() {
@@ -1228,6 +1343,7 @@
             if(currentCustomer && currentCustomer.phone === activeStaffChat.phone) {
                 renderActiveCustomerChatSession();
             }
+            persistChat(activeStaffChat.phone);
         }
 
         function handleStaffChatKey(e) {
@@ -1323,14 +1439,9 @@
         }
 
         function updateOrderStatus(orderId, newStatus) {
-            let target = globalOrders.find(o => o.id === orderId);
-            if(target) {
-                target.status = newStatus;
-                renderStaffOrders();
-                renderStaffHistory();
-                updateAdminDashboard();
-                if(currentCustomer) renderCustomerOrders();
-            }
+            if(!firebaseReady) return;
+            db.collection('orders').doc(orderId).update({ status: newStatus }).catch(err => console.error(err));
+            // ไม่ต้อง render เองเพราะ onSnapshot จะอัปเดตให้ทุกอุปกรณ์อัตโนมัติ
         }
 
         function showOrderDetail(orderId) {
@@ -1401,13 +1512,17 @@
             let p = document.getElementById('new-password').value;
             let r = document.getElementById('new-role').value;
             if(!u || !p) { showCustomAlert("แจ้งเตือน", "กรุณากรอก Username และ Password", "⚠️"); return; }
+            if(!firebaseReady) { showCustomAlert("ยังไม่ได้เชื่อมต่อออนไลน์", "กรุณาตั้งค่า Firebase ก่อน", "⚠️"); return; }
             if(systemUsers.some(user => user.username === u)) { showCustomAlert("แจ้งเตือน", "Username นี้มีอยู่แล้ว", "⚠️"); return; }
             
-            systemUsers.push({ username: u, pass: p, role: r, online: false });
-            document.getElementById('new-username').value = '';
-            document.getElementById('new-password').value = '';
-            showCustomAlert("สำเร็จ", "เพิ่มพนักงานเรียบร้อยแล้ว", "✅");
-            renderUsersList();
+            db.collection('users').doc(u).set({ username: u, pass: p, role: r, online: false }).then(() => {
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-password').value = '';
+                showCustomAlert("สำเร็จ", "เพิ่มพนักงานเรียบร้อยแล้ว", "✅");
+            }).catch(err => {
+                console.error(err);
+                showCustomAlert("ผิดพลาด", "เพิ่มพนักงานไม่สำเร็จ", "❌");
+            });
         }
 
         function renderUsersList() {
@@ -1427,8 +1542,8 @@
 
         function deleteUser(index) {
             if(systemUsers[index].username === 'admin') return;
-            systemUsers.splice(index, 1);
-            renderUsersList();
+            if(!firebaseReady) return;
+            db.collection('users').doc(systemUsers[index].username).delete().catch(err => console.error(err));
         }
 
         function filterAdminReviews(rating) {
