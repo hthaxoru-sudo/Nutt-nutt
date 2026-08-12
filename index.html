@@ -76,6 +76,8 @@
   .btn:hover{background:var(--primary-dark);}
   .btn-danger{background:var(--danger);}
   .btn-danger:hover{background:#c73438;}
+  .btn-warning{background:var(--warning);color:#fff;}
+  .btn-warning:hover{background:#d98704;}
   .btn-secondary{background:#6c7688;}
   .btn-secondary:hover{background:#5a6272;}
   .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px;}
@@ -157,7 +159,7 @@
     <h3>เข้าสู่ระบบแชทห้องเรียน</h3>
     <input type="text" id="nicknameInput" placeholder="ใส่ชื่อเล่นของคุณ..." maxlength="20" onkeypress="if(event.key==='Enter'){login();}">
     <input type="password" id="adminPassInput" placeholder="รหัสแอดมิน" style="display:none;" onkeypress="if(event.key==='Enter'){login();}">
-    <span class="hint">🌐 ระบบ Real-time • ตารางเรียน & ข่าวสาร</span>
+    <span class="hint">🌐 ระบบ Real-time • ข่าวสาร & แชทกลุ่ม</span>
     <button class="btn" id="loginBtn" onclick="login()">เข้าสู่ห้องแชท</button>
     <button class="link-btn" onclick="toggleAdminField()">เข้าสู่ระบบในฐานะแอดมิน</button>
   </div>
@@ -186,7 +188,7 @@
     <input type="text" id="editGroupNameInput" placeholder="ชื่อกลุ่มใหม่...">
     <button class="btn btn-sm" onclick="saveGroupName()">เปลี่ยนชื่อกลุ่ม</button>
     <hr style="margin:8px 0;border-color:#e2e8f0;">
-    <div style="text-align:left;font-size:.82rem;font-weight:700;color:#334155;">สมาชิกในกลุ่มปัจจุบัน (คลิกเพื่อเตะออก):</div>
+    <div style="text-align:left;font-size:.82rem;font-weight:700;color:#334155;">สมาชิกในกลุ่มปัจจุบัน:</div>
     <div id="groupMemberListArea" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;text-align:left;"></div>
     <div class="row" style="margin-top:10px;">
       <button class="btn btn-danger" style="flex:1;" onclick="deleteCurrentGroup()">ยุบกลุ่มนี้</button>
@@ -249,18 +251,16 @@
   <!-- Shortcuts Menu Bar -->
   <div class="shortcuts-bar" id="shortcutsBarContainer"></div>
 
-  <!-- Control Bar ปรับปรุงการเลือกประเภทแชท -->
+  <!-- Control Bar -->
   <div class="control-bar">
     <span class="user-tag" id="myNicknameTag" onclick="openEditProfile()" title="คลิกเพื่อเปลี่ยนชื่อ">-</span>
     
-    <!-- แบ่งประเภทแชทอย่างชัดเจน -->
     <select id="chatMode" onchange="handleChatModeChange()">
       <optgroup label="💬 แชทหลัก">
         <option value="group">💬 แชทรวม (สาธารณะ)</option>
         <option value="private">🔒 แชทเดี่ยว (ส่วนตัว)</option>
       </optgroup>
       <optgroup label="👥 กลุ่มที่ฉันอยู่" id="customGroupOptGroup">
-        <!-- จะถูกสร้าง Dynamic ด้วย JavaScript -->
       </optgroup>
     </select>
 
@@ -273,7 +273,6 @@
     <button class="icon-btn admin-pill" id="adminPanelBtn" style="display:none;" onclick="openFullAdminCenter()"><i class="fa-solid fa-screwdriver-wrench"></i> Admin<span class="notif-badge" id="reportBadge" style="display:none;">0</span></button>
   </div>
 
-  <!-- แถบจัดการกลุ่มสำหรับผู้สร้างกลุ่ม -->
   <div class="group-info-bar" id="groupInfoBar">
     <span>👑 คุณคือผู้สร้างกลุ่มนี้</span>
     <button class="icon-btn btn-sm" onclick="openManageGroupModal()"><i class="fa-solid fa-gear"></i> ตั้งค่ากลุ่ม / เตะคนออก</button>
@@ -294,7 +293,6 @@
 <!-- FULL ADMIN CONTROL CENTER -->
 <!-- ========================================================= -->
 <div id="adminContainer">
-  <!-- Admin Sidebar Navigation (เอา Schedule ออกแล้ว) -->
   <div class="admin-sidebar" id="adminSidebar">
     <div class="admin-sidebar-header">
       <i class="fa-solid fa-shield-halved fa-lg"></i>
@@ -319,7 +317,6 @@
     </div>
   </div>
 
-  <!-- Admin Main Content Area -->
   <div class="admin-main">
     <div class="admin-topbar">
       <div class="admin-topbar-title">
@@ -333,18 +330,16 @@
     </div>
 
     <div class="admin-content" id="adminContentArea">
-      <!-- Dynamic Content Rendered Here -->
     </div>
   </div>
 </div>
 
 <script>
-// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyC9emUQgRfiMmFML272Ue2rLimj6g3B4q8",
   authDomain: "kkkk-c0436.firebaseapp.com",
   projectId: "kkkk-c0436",
-  storageBucket: "kkkk-c0436.firebasestorage.app",
+  storageBucket: "kkkk-c0436.appspot.com",
   messagingSenderId: "268898744682",
   appId: "1:268898744682:web:32c774a6f36c081b448d13",
   measurementId: "G-NNSB108BRQ",
@@ -355,12 +350,11 @@ const ADMIN_PASSWORD = "admin1234";
 
 var myName = '', myUid = '', myEmail = 'ไม่มีข้อมูล', isAdmin = false;
 var selectedFile = null, onlineUsersCache = {}, allUsersCache = {}, reportsCache = {}, shortcutsCache = {};
-var customGroupsCache = {}; // แคชข้อมูลกลุ่มแชทที่กำหนดเอง
-var systemSettings = { allowNameChange: true, allowFileUpload: true, maintenanceMode: false, maxFileSizeMB: 10 }; // System Settings
+var customGroupsCache = {}; 
+var systemSettings = { allowNameChange: true, allowFileUpload: true, maintenanceMode: false, maxFileSizeMB: 10 }; 
 var db = null, storage = null, auth = null;
 var currentAdminTab = 'dashboard';
 
-// Global Diagnostic Status Flags
 var systemDiagnostics = {
   auth: { status: 'ok', name: 'Firebase Auth', msg: 'Working' },
   rtdb: { status: 'ok', name: 'Realtime Database', msg: 'Working' },
@@ -377,26 +371,25 @@ try {
   storage = firebase.storage();
   auth = firebase.auth();
 } catch (err) {
-  logSystemError('Firebase Init', err.message);
-  alert('ไม่สามารถเชื่อมต่อ Firebase ได้: ' + err.message);
+  console.error('Firebase Init Error:', err.message);
 }
 
-// Error Monitor Tracker
+// กรองป้องกันการบันทึก Auth Error ซ้ำๆ จาก Guest
 function logSystemError(type, message) {
+  if (!myUid && type.includes('Auth Error')) return; 
   console.error(`[${type}]`, message);
-  if (db) {
+  if (db && myUid) {
     db.ref('errors').push({
       time: new Date().toLocaleString('th-TH'),
       type: type,
       message: message,
-      uid: myUid || 'Unknown',
+      uid: myUid || 'Guest',
       user: myName || 'Unknown',
       ts: Date.now()
     });
   }
 }
 
-// Global Activity Logger
 function logActivity(actor, uid, action, details) {
   if (db) {
     db.ref('activities').push({
@@ -460,7 +453,6 @@ async function login(){
     myName = name;
     myEmail = userCredential.user.email || 'ไม่มีข้อมูล';
 
-    // เช็คสิทธิ์ Ban
     const banSnap = await db.ref('bans/' + myUid).once('value');
     if (banSnap.exists()) {
       const banData = banSnap.val();
@@ -468,15 +460,13 @@ async function login(){
       return;
     }
 
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('chatContainer').style.display = 'flex';
-    document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
-    if (isAdmin) document.getElementById('adminPanelBtn').style.display = 'inline-flex';
-
-    // บันทึก/อัปเดตข้อมูลผู้ใช้แบบละเอียดใน DB
     const userRef = db.ref('users/' + myUid);
     const existingSnap = await userRef.once('value');
     const existingData = existingSnap.val() || {};
+
+    if (existingData.admin === true) {
+      isAdmin = true;
+    }
 
     const userData = {
       uid: myUid,
@@ -491,6 +481,11 @@ async function login(){
 
     await userRef.set(userData);
     userRef.child('online').onDisconnect().set(false);
+
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('chatContainer').style.display = 'flex';
+    document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+    if (isAdmin) document.getElementById('adminPanelBtn').style.display = 'inline-flex';
 
     db.ref(`userHistory/${myUid}/loginHistory`).push(new Date().toLocaleString('th-TH'));
     logActivity(myName, myUid, 'User Login', 'เข้าสู่ระบบแชท');
@@ -507,6 +502,13 @@ function initRealtimeListeners(){
     if (!snap.exists()) {
       alert('คุณถูก Admin เตะออกจากระบบ');
       location.reload();
+      return;
+    }
+    const val = snap.val();
+    if (val && val.admin !== undefined) {
+      isAdmin = val.admin;
+      document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+      document.getElementById('adminPanelBtn').style.display = isAdmin ? 'inline-flex' : 'none';
     }
   });
 
@@ -517,7 +519,6 @@ function initRealtimeListeners(){
     }
   });
 
-  // อ่านข้อมูลผู้ใช้ทั้งหมด
   db.ref('users').on('value', (snapshot) => {
     allUsersCache = snapshot.val() || {};
     onlineUsersCache = {};
@@ -533,14 +534,12 @@ function initRealtimeListeners(){
     if (isAdmin && currentAdminTab === 'dashboard') renderAdminDashboard();
   });
 
-  // อ่านกลุ่มแชทที่กำหนดเอง (Custom Groups)
   db.ref('customGroups').on('value', (snapshot) => {
     customGroupsCache = snapshot.val() || {};
     renderCustomGroupSelectOptions();
-    handleChatModeChange(); // อัปเดต UI แถบผู้สร้าง
+    handleChatModeChange();
   });
 
-  // อ่านข้อความแชท
   db.ref('messages').on('value', (snapshot) => {
     const chatBox = document.getElementById('chatBox');
     chatBox.innerHTML = ''; 
@@ -550,7 +549,6 @@ function initRealtimeListeners(){
 
     Object.keys(messages).forEach(key => {
       const data = messages[key];
-      // กรองข้อความตามประเภทแชทที่เลือก
       if (mode === 'group' && data.mode === 'group') {
         renderMessage(key, data, data.senderUid === myUid);
       } else if (mode === 'private' && data.mode === 'private') {
@@ -563,12 +561,10 @@ function initRealtimeListeners(){
     });
   });
 
-  // อ่านตั้งค่า Realtime + System Settings ที่ใช้ได้จริง
   db.ref('settings').on('value', (snapshot) => {
     const s = snapshot.val() || {};
     if (s.system) {
       systemSettings = Object.assign(systemSettings, s.system);
-      // เช็ค Maintenance Mode
       if (systemSettings.maintenanceMode && !isAdmin) {
         alert('⚠️ ระบบปิดปรับปรุงชั่วคราวโดยผู้ดูแลระบบ');
         location.reload();
@@ -608,9 +604,6 @@ function renderTargetSelect(users){
   select.value = current;
 }
 
-// ---------------------------------------------------------
-// ระบบแบ่งประเภทแชท & กลุ่มที่กำหนดเอง (CUSTOM GROUPS)
-// ---------------------------------------------------------
 function renderCustomGroupSelectOptions(){
   const optGroup = document.getElementById('customGroupOptGroup');
   optGroup.innerHTML = '';
@@ -618,7 +611,6 @@ function renderCustomGroupSelectOptions(){
   let myGroupCount = 0;
   Object.keys(customGroupsCache).forEach(groupId => {
     const group = customGroupsCache[groupId];
-    // แสดงเฉพาะกลุ่มที่ผู้ใช้เป็นสมาชิก หรือเป็น Owner หรือเป็น Admin
     if (group.ownerUid === myUid || (group.members && group.members[myUid]) || isAdmin) {
       myGroupCount++;
       const opt = document.createElement('option');
@@ -660,7 +652,6 @@ function handleChatModeChange(){
     }
   }
 
-  // โหลดข้อความใหม่เมื่อเปลี่ยนโหมด
   db.ref('messages').once('value', snapshot => {
     const chatBox = document.getElementById('chatBox');
     chatBox.innerHTML = '';
@@ -705,7 +696,7 @@ function createCustomGroup(){
 
   const selectedBoxes = document.querySelectorAll('.group-member-checkbox:checked');
   const members = {};
-  members[myUid] = true; // ผู้สร้างเป็นสมาชิกอัตโนมัติ
+  members[myUid] = true;
 
   selectedBoxes.forEach(box => {
     members[box.value] = true;
@@ -768,7 +759,7 @@ function kickMemberFromGroup(groupId, memberUid){
   if (confirm('ต้องการเตะสมาชิกท่านนี้ออกจากกลุ่มใช่หรือไม่?')){
     db.ref(`customGroups/${groupId}/members/${memberUid}`).remove().then(() => {
       showToast('เตะออกจากกลุ่มแล้ว');
-      openManageGroupModal(); // Reload Modal
+      openManageGroupModal();
     });
   }
 }
@@ -776,7 +767,7 @@ function kickMemberFromGroup(groupId, memberUid){
 function deleteCurrentGroup(){
   const mode = document.getElementById('chatMode').value;
   const groupId = mode.replace('custom_', '');
-  if (confirm('🚨 คุณต้องการลบ/ยุบกลุ่มนี้ใช่หรือไม่? ข้อความทั้งหมดของกลุ่มจะยังคงอยู่หรือถูกลบ')){
+  if (confirm('🚨 คุณต้องการลบ/ยุบกลุ่มนี้ใช่หรือไม่?')){
     db.ref(`customGroups/${groupId}`).remove().then(() => {
       showToast('ยุบกลุ่มเรียบร้อยแล้ว');
       closeModal('manageGroupOverlay');
@@ -786,7 +777,6 @@ function deleteCurrentGroup(){
   }
 }
 
-// ---------------------------------------------------------
 function handleFileSelect(){
   const file = document.getElementById('fileInput').files[0];
   if (!file) return;
@@ -801,6 +791,7 @@ function handleFileSelect(){
   document.getElementById('selectedFileLabel').textContent = '📁 ' + file.name;
 }
 
+// แก้ไขปัญหา Firebase Storage Exception
 async function sendMessage(){
   if (!systemSettings.allowFileUpload && selectedFile) {
     alert('⚠️ การแนบไฟล์ถูกปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ');
@@ -822,10 +813,16 @@ async function sendMessage(){
   try {
     if (selectedFile) {
       document.getElementById('selectedFileLabel').textContent = '⏳ กำลังอัปโหลด...';
-      const fileRef = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
-      const snapshot = await fileRef.put(selectedFile);
-      const downloadURL = await snapshot.ref.getDownloadURL();
-      fileData = { name: selectedFile.name, url: downloadURL };
+      try {
+        const fileRef = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
+        const snapshot = await fileRef.put(selectedFile);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        fileData = { name: selectedFile.name, url: downloadURL };
+      } catch (stErr) {
+        systemDiagnostics.fileUpload.status = 'error';
+        logSystemError('Storage File Upload', stErr.message);
+        alert('⚠️ ไม่สามารถอัปโหลดไฟล์ไปที่ Firebase Storage ได้ (ตรวจพบปัญหา CORS/Storage Rules)\nระบบจะทำการส่งเฉพาะข้อความตัวอักษรแทน');
+      }
     }
 
     await db.ref('messages').push({
@@ -834,7 +831,7 @@ async function sendMessage(){
       isAdmin: isAdmin,
       text: msgText,
       file: fileData,
-      mode: mode, // group, private, หรือ custom_groupId
+      mode: mode,
       targetUid: mode === 'private' ? targetUid : null,
       time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       ts: Date.now()
@@ -845,8 +842,7 @@ async function sendMessage(){
     document.getElementById('selectedFileLabel').textContent = '';
     selectedFile = null;
   } catch (err) {
-    systemDiagnostics.fileUpload.status = 'error';
-    logSystemError('File Upload/Message Failed', err.message);
+    logSystemError('Message Send Failed', err.message);
     alert('ส่งข้อความไม่สำเร็จ: ' + err.message);
   } finally {
     sendBtn.disabled = false;
@@ -941,18 +937,23 @@ async function saveMyDisplayName(){
   myName = newName;
   document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
 
-  await db.ref(`users/${myUid}/name`).set(newName);
+  try {
+    await db.ref(`users/${myUid}/name`).set(newName);
 
-  const historyRef = db.ref(`userHistory/${myUid}/nameHistory`).push();
-  await historyRef.set({
-    from: oldName,
-    to: newName,
-    time: new Date().toLocaleString('th-TH')
-  });
+    const historyRef = db.ref(`userHistory/${myUid}/nameHistory`).push();
+    await historyRef.set({
+      from: oldName,
+      to: newName,
+      time: new Date().toLocaleString('th-TH')
+    });
 
-  logActivity(myName, myUid, 'Name Change', `${oldName} -> ${newName}`);
-  closeModal('editProfileOverlay');
-  showToast('เปลี่ยนชื่อสำเร็จ');
+    logActivity(myName, myUid, 'Name Change', `${oldName} -> ${newName}`);
+    closeModal('editProfileOverlay');
+    showToast('เปลี่ยนชื่อสำเร็จ');
+  } catch (err) {
+    logSystemError('Profile Update Error', err.message);
+    alert('อัปเดตชื่อไม่สำเร็จ: ' + err.message);
+  }
 }
 
 function renderUserShortcuts(shortcuts){
@@ -1015,7 +1016,7 @@ function switchAdminTab(tab, element){
       renderAdminDashboard();
       break;
     case 'users':
-      titleEl.innerHTML = '<i class="fa-solid fa-users"></i> User Management';
+      titleEl.innerHTML = '<i class="fa-solid fa-users"></i> User Management & Permissions';
       renderAdminUsersSection();
       break;
     case 'bans':
@@ -1061,7 +1062,6 @@ function switchAdminTab(tab, element){
   }
 }
 
-// 1. Dashboard
 async function renderAdminDashboard(){
   const area = document.getElementById('adminContentArea');
   
@@ -1122,7 +1122,9 @@ async function renderAdminDashboard(){
   });
 }
 
-// 2. User Management
+// ---------------------------------------------------------
+// USER MANAGEMENT & ROLE PERMISSION TOGGLE
+// ---------------------------------------------------------
 function renderAdminUsersSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1140,7 +1142,7 @@ function renderAdminUsersSection(){
               <th>สถานะ</th>
               <th>สิทธิ์</th>
               <th>วันที่สมัคร</th>
-              <th>จัดการ</th>
+              <th>จัดการสิทธิ์ & บัญชี</th>
             </tr>
           </thead>
           <tbody id="userTableBody"></tbody>
@@ -1165,16 +1167,23 @@ function filterUserTable(){
     if (nameMatch || uidMatch || emailMatch) {
       const tr = document.createElement('tr');
       const isOnline = u.online;
+      const isTargetAdmin = u.admin === true;
+
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.name)}</strong></td>
         <td><code style="font-size:.78rem;">${escapeHtml(u.uid)}</code></td>
         <td>${escapeHtml(u.email || 'ไม่มีข้อมูล')}</td>
         <td><span class="status-tag ${isOnline ? 'status-online' : 'status-offline'}">${isOnline ? '🟢 Online' : '⚪ Offline'}</span></td>
-        <td>${u.admin ? '🛠 Admin' : 'ผู้ใช้ทั่วไป'}</td>
+        <td>${isTargetAdmin ? '<strong style="color:var(--primary-dark);">🛠 Admin</strong>' : 'ผู้ใช้ทั่วไป'}</td>
         <td>${escapeHtml(u.createdAt || '-')}</td>
         <td>
-          <div class="row" style="gap:4px;">
-            <button class="btn btn-sm" onclick="viewUserHistory('${u.uid}')">ดูประวัติ</button>
+          <div class="row" style="gap:4px;flex-wrap:wrap;">
+            <button class="btn btn-sm" onclick="viewUserHistory('${u.uid}')">ประวัติ</button>
+            ${
+              isTargetAdmin
+                ? (u.uid !== myUid ? `<button class="btn btn-sm btn-warning" onclick="toggleUserAdminRole('${u.uid}', false)">ถอดสิทธิ์ Admin</button>` : '')
+                : `<button class="btn btn-sm" style="background:#4b6ef5;" onclick="toggleUserAdminRole('${u.uid}', true)">แต่งตั้ง Admin</button>`
+            }
             ${u.uid !== myUid ? `<button class="btn btn-sm btn-secondary" onclick="kickUser('${u.uid}')">เตะ</button>` : ''}
             ${u.uid !== myUid ? `<button class="btn btn-sm btn-danger" onclick="banUserPrompt('${u.uid}')">แบน</button>` : ''}
           </div>
@@ -1183,6 +1192,21 @@ function filterUserTable(){
       tbody.appendChild(tr);
     }
   });
+}
+
+function toggleUserAdminRole(targetUid, setAdmin){
+  const targetUser = allUsersCache[targetUid];
+  const actionName = setAdmin ? 'แต่งตั้งเป็น Admin' : 'ถอดสิทธิ์ Admin';
+  
+  if (confirm(`คุณต้องการ ${actionName} ให้แก่ผู้ใช้ "${targetUser ? targetUser.name : targetUid}" ใช่หรือไม่?`)){
+    db.ref(`users/${targetUid}/admin`).set(setAdmin).then(() => {
+      logActivity(myName, myUid, setAdmin ? 'Grant Admin Role' : 'Revoke Admin Role', `UID: ${targetUid}`);
+      showToast(`${actionName} เรียบร้อยแล้ว`);
+      renderAdminUsersSection();
+    }).catch(err => {
+      alert('เกิดข้อผิดพลาดในการปรับเปลี่ยนสิทธิ์: ' + err.message);
+    });
+  }
 }
 
 function kickUser(uid){
@@ -1210,7 +1234,6 @@ function banUserPrompt(uid){
   }
 }
 
-// 3. Bans Management
 async function renderAdminBansSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = '<div class="admin-card"><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>UID</th><th>เหตุผล</th><th>ผู้แบน</th><th>วันที่แบน</th><th>การกระทำ</th></tr></thead><tbody id="banTableBody"></tbody></table></div></div>';
@@ -1247,7 +1270,6 @@ function unbanUser(uid){
   }
 }
 
-// 4. View User History
 async function viewUserHistory(uid){
   const user = allUsersCache[uid] || { name: 'Unknown', uid: uid, email: 'ไม่มีข้อมูล' };
   const historySnap = await db.ref(`userHistory/${uid}`).once('value');
@@ -1287,7 +1309,6 @@ async function viewUserHistory(uid){
   openModal('userHistoryOverlay');
 }
 
-// 5. Chat Management
 function renderAdminChatSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1299,7 +1320,6 @@ function renderAdminChatSection(){
   `;
 }
 
-// 6. Announcements
 function renderAdminAnnounceSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1327,7 +1347,6 @@ function clearAnnouncement(){
   db.ref('settings/banner').remove().then(() => showToast('ลบประกาศปักหมุดแล้ว'));
 }
 
-// 7. Bug Reports
 function renderAdminReportsSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = '<div class="admin-card"><div id="adminReportCards" style="display:flex;flex-direction:column;gap:10px;"></div></div>';
@@ -1366,7 +1385,6 @@ function deleteReport(key){
   db.ref(`reports/${key}`).remove().then(() => showToast('ลบรายงานแล้ว'));
 }
 
-// 8. Error Monitor
 function renderAdminErrorsSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = '<div class="admin-card"><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>เวลา</th><th>ประเภท</th><th>ข้อความ Error</th><th>UID/ผู้ใช้</th></tr></thead><tbody id="errorTableBody"></tbody></table></div></div>';
@@ -1392,7 +1410,6 @@ function renderAdminErrorsSection(){
   });
 }
 
-// 9. Script Diagnostics
 function renderAdminDiagnosticsSection(){
   const area = document.getElementById('adminContentArea');
   let html = '<div class="admin-card"><div class="admin-card-title" style="margin-bottom:14px;">🧩 SCRIPT DIAGNOSTICS</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">';
@@ -1415,7 +1432,6 @@ function renderAdminDiagnosticsSection(){
   area.innerHTML = html;
 }
 
-// 10. Shortcut Management
 function renderAdminShortcutsSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1486,7 +1502,6 @@ function deleteShortcut(key){
   if (confirm('ลบ Shortcut นี้?')) db.ref(`shortcuts/${key}`).remove();
 }
 
-// 11. Appearance
 function renderAdminAppearanceSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1523,7 +1538,6 @@ function saveAdminAppearance(){
   });
 }
 
-// 12. System Settings (ทำให้ใช้ได้จริง)
 function renderAdminSettingsSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1585,7 +1599,6 @@ function saveSystemSettingsConfig(){
   });
 }
 
-// 13. Activity Logs
 function renderAdminActivitySection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
