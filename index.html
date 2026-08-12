@@ -3,107 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Classroom Hub & Full Admin Control</title>
+<title>Classroom Online Chat & Hub</title>
+<!-- Font Awesome สำหรับ Icon Shortcuts และ Admin UI -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  :root {
-    --primary: #4b6ef5;
-    --primary-dark: #3453d1;
-    --bg: #eef1f8;
-    --bubble-mine: #4b6ef5;
-    --bubble-other: #ffffff;
-    --danger: #e5484d;
-    --success: #2fa86a;
-    --warning: #f5a623;
-    --dark-card: #1e2430;
-    --sidebar-width: 240px;
+  :root{
+    --primary:#4b6ef5;
+    --primary-dark:#3453d1;
+    --bg:#eef1f8;
+    --bubble-mine:#4b6ef5;
+    --bubble-other:#ffffff;
+    --danger:#e5484d;
+    --success:#2fa86a;
+    --warning:#f59e0b;
+    --radius:16px;
+    --sidebar-width:240px;
   }
-  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-  body { background: var(--bg); min-height: 100vh; color: #2b2f3a; }
+  *{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:0;}
+  body{background:linear-gradient(160deg,#eef1f8,#dfe6fb);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:12px;color:#2b2f3a;}
 
-  /* Overlays & Auth Modal */
-  .overlay { position: fixed; inset: 0; background: rgba(20,25,50,.6); display: flex; justify-content: center; align-items: center; z-index: 999; padding: 16px; }
-  .card { background: #fff; padding: 28px 26px; border-radius: 20px; width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,.2); display: flex; flex-direction: column; gap: 12px; position: relative; }
-  .card h3 { color: var(--primary-dark); font-size: 1.3rem; text-align: center; }
-  .card input, .card textarea, .card select { padding: 10px 12px; border: 1px solid #d7dbea; border-radius: 10px; outline: none; font-size: .92rem; width: 100%; }
-  .card input:focus, .card textarea:focus { border-color: var(--primary); }
-  .row { display: flex; gap: 8px; }
-  .btn { padding: 10px 16px; border: none; background: var(--primary); color: #fff; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: .88rem; transition: .15s; }
-  .btn:hover { background: var(--primary-dark); }
-  .btn-danger { background: var(--danger); } .btn-danger:hover { background: #c73438; }
-  .btn-warning { background: var(--warning); color: #fff; }
-  .btn-success { background: var(--success); }
-  .btn-outline { background: transparent; border: 1px solid #d7dbea; color: #555; }
-  .btn-outline:hover { background: #f0f2fb; }
-  .link-btn { background: none; border: none; color: var(--primary); font-size: .8rem; cursor: pointer; text-decoration: underline; text-align: center; margin-top: 4px; }
+  /* Overlays & Cards */
+  .overlay{position:fixed;inset:0;background:rgba(20,25,50,.55);display:flex;justify-content:center;align-items:center;z-index:999;padding:16px;}
+  .card{background:#fff;padding:28px 26px;border-radius:20px;width:380px;max-width:95vw;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:12px;text-align:center;position:relative;}
+  .card h3{color:var(--primary-dark);font-size:1.25rem;}
+  .card input,.card textarea,.card select{padding:11px 12px;border:1px solid #d7dbea;border-radius:10px;outline:none;font-size:.95rem;}
+  .card input:focus,.card textarea:focus,.card select:focus{border-color:var(--primary);}
+  .hint{font-size:.75rem;color:var(--success);font-weight:600;}
+  .link-btn{background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;text-decoration:underline;margin-top:2px;}
+  .row{display:flex;gap:8px;}
 
-  /* Main Layout Switcher */
-  .app-layout { width: 100vw; height: 100vh; display: flex; overflow: hidden; }
+  /* Main Chat Layout */
+  .chat-container{width:100%;max-width:680px;height:92vh;background:#fff;border-radius:22px;box-shadow:0 12px 34px rgba(30,40,90,.18);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+  .chat-header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;}
+  .chat-header .title{font-size:1.15rem;font-weight:700;}
+  .chat-header .sub{font-size:.75rem;opacity:.85;}
+  .online-badge{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:5px;}
+  .online-dot{width:7px;height:7px;background:#4dff88;border-radius:50%;display:inline-block;}
 
-  /* User Chat View */
-  .chat-view { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 12px; }
-  .chat-container { width: 100%; max-width: 800px; height: 95vh; background: #fff; border-radius: 22px; box-shadow: 0 12px 34px rgba(30,40,90,.15); display: flex; flex-direction: column; overflow: hidden; }
-  .chat-header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
-  .chat-header .title { font-size: 1.15rem; font-weight: 700; }
-  .chat-header .sub { font-size: .75rem; opacity: .85; }
-  
-  .shortcuts-bar { display: flex; gap: 8px; padding: 8px 14px; background: #f0f3fa; border-bottom: 1px solid #e1e5f2; overflow-x: auto; white-space: nowrap; }
-  .shortcut-chip { background: #fff; border: 1px solid #d0d7de; padding: 4px 10px; border-radius: 16px; font-size: .8rem; font-weight: 600; text-decoration: none; color: #333; display: inline-flex; align-items: center; gap: 4px; }
-  .shortcut-chip:hover { border-color: var(--primary); color: var(--primary); }
+  .control-bar{display:flex;gap:6px;padding:10px 14px;background:#f6f7fc;border-bottom:1px solid #e7e9f3;align-items:center;flex-wrap:wrap;}
+  .control-bar select{padding:7px 10px;border-radius:8px;border:1px solid #d7dbea;font-size:.85rem;background:#fff;}
+  .user-tag{font-weight:700;color:var(--primary-dark);background:#e9edff;padding:5px 10px;border-radius:14px;font-size:.85rem;cursor:pointer;}
+  .user-tag:hover{background:#dbe2ff;}
+  .icon-btn{background:#fff;border:1px solid #d7dbea;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:.8rem;font-weight:600;color:#555;transition:.15s;display:inline-flex;align-items:center;gap:4px;}
+  .icon-btn:hover{background:#f0f2fb;}
+  .admin-pill{background:#fff3cd;color:#8a6300;border:1px solid #ffe4a1;font-weight:700;margin-left:auto;}
 
-  .control-bar { display: flex; gap: 6px; padding: 8px 14px; background: #f8f9fe; border-bottom: 1px solid #e7e9f3; align-items: center; flex-wrap: wrap; }
-  .user-tag { font-weight: 700; color: var(--primary-dark); background: #e9edff; padding: 4px 10px; border-radius: 12px; font-size: .82rem; }
-  
-  .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
-  .message { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: .92rem; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,.05); position: relative; }
-  .message.mine { background: var(--bubble-mine); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .message.others { background: var(--bubble-other); color: #2b2f3a; align-self: flex-start; border-bottom-left-radius: 4px; }
-  .message.system { align-self: center; background: #fff3cd; color: #8a6300; font-size: .8rem; font-weight: 600; border-radius: 20px; }
-  .message .meta { font-size: .72rem; opacity: .75; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
-  .del-btn { background: none; border: none; color: inherit; opacity: .6; cursor: pointer; font-size: .75rem; margin-left: 6px; }
-  .del-btn:hover { opacity: 1; color: var(--danger); }
+  /* Group Management Banner in Control Bar */
+  .group-info-bar{display:none;align-items:center;justify-content:space-between;background:#eef2ff;padding:6px 14px;border-bottom:1px solid #d0d9ff;font-size:.82rem;color:var(--primary-dark);}
 
-  .chat-input { display: flex; gap: 8px; padding: 12px 14px; background: #fff; border-top: 1px solid #e7e9f3; align-items: center; }
-  .chat-input input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid #d7dbea; border-radius: 20px; outline: none; font-size: .9rem; }
+  /* Shortcuts Bar */
+  .shortcuts-bar{display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #e7e9f3;overflow-x:auto;white-space:nowrap;}
+  .shortcuts-bar::-webkit-scrollbar{height:4px;}
+  .shortcuts-bar::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px;}
+  .shortcut-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:#f0f3ff;color:var(--primary-dark);border-radius:16px;font-size:.8rem;font-weight:600;text-decoration:none;transition:.15s;border:1px solid #d0d9ff;}
+  .shortcut-chip:hover{background:var(--primary);color:#fff;}
 
-  /* Full-Screen Admin Control Panel UI */
-  .admin-view { width: 100vw; height: 100vh; display: flex; background: #f4f6fb; }
-  .admin-sidebar { width: var(--sidebar-width); background: var(--dark-card); color: #fff; display: flex; flex-direction: column; padding: 16px 0; }
-  .admin-sidebar .brand { padding: 0 20px 16px; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #2d3545; color: #6b8aff; }
-  .admin-menu { list-style: none; margin-top: 10px; flex: 1; overflow-y: auto; }
-  .admin-menu li { padding: 12px 20px; cursor: pointer; font-size: .88rem; font-weight: 600; color: #a0aec0; display: flex; align-items: center; gap: 10px; transition: .15s; }
-  .admin-menu li:hover, .admin-menu li.active { background: #2a3243; color: #fff; border-left: 4px solid var(--primary); }
-  .admin-sidebar .footer-btn { padding: 14px 20px; border-top: 1px solid #2d3545; }
+  .chat-messages{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
+  .message{max-width:76%;padding:10px 14px;border-radius:var(--radius);font-size:.93rem;line-height:1.4;word-wrap:break-word;box-shadow:0 1px 3px rgba(0,0,0,.06);position:relative;}
+  .message.mine{background:var(--bubble-mine);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+  .message.others{background:var(--bubble-other);color:#2b2f3a;align-self:flex-start;border-bottom-left-radius:4px;}
+  .message.system{align-self:center;background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;border-radius:20px;padding:6px 16px;}
+  .message .meta{font-size:.72rem;opacity:.75;margin-bottom:4px;display:flex;justify-content:space-between;gap:14px;align-items:center;}
+  .message a{color:inherit;font-weight:700;text-decoration:underline;}
+  .badge-tiny{font-size:.68rem;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.15);margin-left:4px;}
+  .del-btn{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:.75rem;margin-left:8px;}
+  .del-btn:hover{opacity:1;color:var(--danger);}
 
-  .admin-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .admin-header { background: #fff; padding: 14px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-  .admin-body { flex: 1; padding: 24px; overflow-y: auto; }
+  .chat-input{display:flex;gap:8px;padding:12px 14px;background:#fff;border-top:1px solid #e7e9f3;align-items:center;}
+  .chat-input input[type="text"]{flex:1;padding:11px 14px;border:1px solid #d7dbea;border-radius:22px;outline:none;font-size:.92rem;}
+  .chat-input input[type="text"]:focus{border-color:var(--primary);}
+  .btn{padding:10px 18px;border:none;background:var(--primary);color:#fff;border-radius:22px;cursor:pointer;font-weight:700;font-size:.88rem;transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+  .btn:hover{background:var(--primary-dark);}
+  .btn-danger{background:var(--danger);}
+  .btn-danger:hover{background:#c73438;}
+  .btn-secondary{background:#6c7688;}
+  .btn-secondary:hover{background:#5a6272;}
+  .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px;}
+  .file-label{cursor:pointer;padding:9px 12px;background:#6c7688;color:#fff;border-radius:20px;font-size:.8rem;font-weight:600;}
+  .selected-file{font-size:.72rem;color:var(--primary-dark);padding:0 4px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-  /* Admin Pages & Cards */
-  .page-section { display: none; }
-  .page-section.active { display: block; }
-  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .stat-card { background: #fff; padding: 18px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,.02); }
-  .stat-card .val { font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); margin-top: 4px; }
-  .stat-card .lbl { font-size: .8rem; color: #718096; font-weight: 600; }
+  .close-x{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.3rem;color:#999;cursor:pointer;}
+  .close-x:hover{color:#333;}
+  .notif-badge{background:var(--danger);color:#fff;font-size:.65rem;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:4px;}
+  .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-20px);background:#2b2f3a;color:#fff;padding:10px 18px;border-radius:12px;font-size:.85rem;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:2000;opacity:0;transition:.25s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .pinned-banner{background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;padding:8px 16px;text-align:center;border-bottom:1px solid #ffe4a1;display:none;}
 
-  /* Data Tables */
-  .table-container { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; margin-top: 12px; }
-  table { width: 100%; border-collapse: collapse; text-align: left; font-size: .88rem; }
-  th { background: #f7fafc; padding: 12px 16px; font-weight: 700; color: #4a5568; border-bottom: 1px solid #e2e8f0; }
-  td { padding: 12px 16px; border-bottom: 1px solid #edf2f7; color: #2d3748; }
-  tr:hover { background: #f8fafc; }
+  /* FULL ADMIN CONTROL CENTER */
+  #adminContainer{position:fixed;inset:0;background:#f4f6fb;z-index:1000;display:none;flex-direction:row;overflow:hidden;}
+  .admin-sidebar{width:var(--sidebar-width);background:#1e2538;color:#fff;display:flex;flex-direction:column;flex-shrink:0;transition:0.2s;}
+  .admin-sidebar-header{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;color:#6182ff;}
+  .admin-nav{flex:1;overflow-y:auto;padding:12px 0;}
+  .admin-nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:#a0aec0;text-decoration:none;font-size:.9rem;font-weight:600;cursor:pointer;transition:.15s;}
+  .admin-nav-item:hover,.admin-nav-item.active{background:rgba(255,255,255,0.08);color:#fff;border-left:4px solid var(--primary);}
+  .admin-sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,0.1);}
+  .admin-sidebar-footer button{width:100%;background:#2d3748;color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .admin-sidebar-footer button:hover{background:#3a4a63;}
 
-  /* Status Badges */
-  .badge { padding: 3px 8px; border-radius: 12px; font-size: .75rem; font-weight: 700; display: inline-block; }
-  .badge-success { background: #def7ec; color: #03543f; }
-  .badge-danger { background: #fde8e8; color: #9b1c1c; }
-  .badge-warning { background: #feecdc; color: #b43403; }
+  .admin-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#f8fafc;}
+  .admin-topbar{background:#fff;padding:14px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;}
+  .admin-topbar-title{font-size:1.2rem;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:10px;}
+  .admin-user-info{display:flex;align-items:center;gap:10px;font-size:.88rem;color:#64748b;font-weight:600;}
+  .admin-content{flex:1;padding:24px;overflow-y:auto;}
 
-  /* Toast & Utilities */
-  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-20px); background: #2b2f3a; color: #fff; padding: 10px 18px; border-radius: 12px; font-size: .85rem; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); z-index: 1500; opacity: 0; transition: .25s; pointer-events: none; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .pinned-banner { background: #fff3cd; color: #8a6300; font-size: .8rem; font-weight: 600; padding: 8px 16px; text-align: center; border-bottom: 1px solid #ffe4a1; display: none; }
-  .schedule-img { width: 100%; max-height: 380px; object-fit: contain; border-radius: 12px; border: 1px solid #d7dbea; background: #f9fafe; }
+  /* Dashboard Widgets */
+  .grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+  .stat-card{background:#fff;padding:20px;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 2px 4px rgba(0,0,0,0.02);display:flex;align-items:center;gap:16px;}
+  .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+  .stat-info .num{font-size:1.5rem;font-weight:700;color:#0f172a;}
+  .stat-info .label{font-size:.8rem;color:#64748b;font-weight:600;}
+
+  /* Data Tables & Cards UI */
+  .admin-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.02);}
+  .admin-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .admin-card-title{font-size:1.05rem;font-weight:700;color:#1e293b;}
+  .data-table{width:100%;border-collapse:collapse;text-align:left;font-size:.88rem;}
+  .data-table th{background:#f8fafc;padding:12px;color:#475569;font-weight:600;border-bottom:1px solid #e2e8f0;}
+  .data-table td{padding:12px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle;}
+  .data-table tr:hover{background:#f8fafc;}
+  .status-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;font-size:.75rem;font-weight:700;}
+  .status-online{background:#dcfce7;color:#15803d;}
+  .status-offline{background:#f1f5f9;color:#64748b;}
+  .status-banned{background:#fee2e2;color:#b91c1c;}
+
+  .search-box{display:flex;gap:10px;margin-bottom:16px;}
+  .search-box input{flex:1;padding:9px 14px;border:1px solid #cbd5e1;border-radius:8px;outline:none;font-size:.9rem;}
+
+  /* Checkbox Member List UI */
+  .user-checkbox-list{max-height:160px;overflow-y:auto;border:1px solid #d7dbea;border-radius:10px;padding:8px;text-align:left;display:flex;flex-direction:column;gap:6px;}
+  .user-checkbox-item{display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer;}
+
+  /* Responsive Admin Mobile Toggle */
+  .mobile-menu-btn{display:none;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#1e293b;margin-right:10px;}
+  @media(max-width:768px){
+    #adminContainer{flex-direction:column;}
+    .admin-sidebar{position:fixed;inset:0 auto 0 0;z-index:1100;transform:translateX(-100%);}
+    .admin-sidebar.open{transform:translateX(0);}
+    .mobile-menu-btn{display:inline-block;}
+  }
 </style>
 
 <!-- Firebase SDK Compat -->
@@ -114,284 +151,195 @@
 </head>
 <body>
 
-<!-- AUTH OVERLAY (Login & Register) -->
-<div class="overlay" id="authOverlay">
-  <div class="card" id="authCard">
-    <h3 id="authTitle">เข้าสู่ระบบ Classroom Hub</h3>
-    <input type="email" id="authEmail" placeholder="อีเมลของคุณ (เช่น user@gmail.com)">
-    <input type="password" id="authPassword" placeholder="รหัสผ่าน (อย่างน้อย 6 หลัก)">
-    <input type="text" id="authName" placeholder="ชื่อเล่น/ชื่อแสดงผล" style="display:none;">
-    
-    <button class="btn" id="authSubmitBtn" onclick="handleAuthSubmit()">เข้าสู่ระบบ</button>
-    <button class="link-btn" id="authToggleBtn" onclick="toggleAuthMode()">ยังไม่มีบัญชี? สมัครสมาชิกที่นี่</button>
+<!-- หน้าล็อกอิน -->
+<div class="overlay" id="loginOverlay">
+  <div class="card">
+    <h3>เข้าสู่ระบบแชทห้องเรียน</h3>
+    <input type="text" id="nicknameInput" placeholder="ใส่ชื่อเล่นของคุณ..." maxlength="20" onkeypress="if(event.key==='Enter'){login();}">
+    <input type="password" id="adminPassInput" placeholder="รหัสแอดมิน" style="display:none;" onkeypress="if(event.key==='Enter'){login();}">
+    <span class="hint">🌐 ระบบ Real-time • ตารางเรียน & ข่าวสาร</span>
+    <button class="btn" id="loginBtn" onclick="login()">เข้าสู่ห้องแชท</button>
+    <button class="link-btn" onclick="toggleAdminField()">เข้าสู่ระบบในฐานะแอดมิน</button>
   </div>
 </div>
 
-<!-- MODAL: เปลี่ยนชื่อตนเอง -->
-<div class="overlay" id="editProfileOverlay" style="display:none;" onclick="if(event.target===this) closeModal('editProfileOverlay')">
+<!-- หน้าต่างสร้างกลุ่มใหม่ (Create Custom Group Modal) -->
+<div class="overlay" id="createGroupOverlay" style="display:none;" onclick="if(event.target===this) closeModal('createGroupOverlay')">
   <div class="card">
-    <h3>✏️ แก้ไขชื่อแสดงผล</h3>
-    <input type="text" id="newDisplayNameInput" placeholder="ใส่ชื่อแสดงผลใหม่...">
-    <div class="row">
-      <button class="btn btn-outline" style="flex:1;" onclick="closeModal('editProfileOverlay')">ยกเลิก</button>
-      <button class="btn" style="flex:1;" onclick="saveMyDisplayName()">บันทึก</button>
+    <button class="close-x" onclick="closeModal('createGroupOverlay')">&times;</button>
+    <h3>👥 สร้างกลุ่มแชทใหม่</h3>
+    <input type="text" id="newGroupNameInput" placeholder="ตั้งชื่อกลุ่ม..." maxlength="30">
+    <div style="text-align:left;font-size:.8rem;color:#64748b;margin-top:4px;">เลือกสมาชิกเข้ากลุ่ม:</div>
+    <div class="user-checkbox-list" id="groupMemberCheckboxList"></div>
+    <div class="row" style="margin-top:6px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('createGroupOverlay')">ยกเลิก</button>
+      <button class="btn" style="flex:1;" onclick="createCustomGroup()">สร้างกลุ่ม</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: รายงานปัญหา -->
+<!-- หน้าต่างจัดการกลุ่ม (Manage Group Modal for Owner) -->
+<div class="overlay" id="manageGroupOverlay" style="display:none;" onclick="if(event.target===this) closeModal('manageGroupOverlay')">
+  <div class="card">
+    <button class="close-x" onclick="closeModal('manageGroupOverlay')">&times;</button>
+    <h3>⚙️ จัดการกลุ่มแชท</h3>
+    <input type="text" id="editGroupNameInput" placeholder="ชื่อกลุ่มใหม่...">
+    <button class="btn btn-sm" onclick="saveGroupName()">เปลี่ยนชื่อกลุ่ม</button>
+    <hr style="margin:8px 0;border-color:#e2e8f0;">
+    <div style="text-align:left;font-size:.82rem;font-weight:700;color:#334155;">สมาชิกในกลุ่มปัจจุบัน (คลิกเพื่อเตะออก):</div>
+    <div id="groupMemberListArea" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;text-align:left;"></div>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn btn-danger" style="flex:1;" onclick="deleteCurrentGroup()">ยุบกลุ่มนี้</button>
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('manageGroupOverlay')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- หน้าต่างรายงานปัญหา (User) -->
 <div class="overlay" id="reportOverlay" style="display:none;" onclick="if(event.target===this) closeModal('reportOverlay')">
   <div class="card">
-    <h3>🐞 รายงานปัญหา / แจ้งบั๊ก</h3>
-    <textarea id="reportText" rows="4" placeholder="อธิบายปัญหาที่พบ..."></textarea>
+    <button class="close-x" onclick="closeModal('reportOverlay')">&times;</button>
+    <h3>🐞 รายงานปัญหา / ขอฟีเจอร์</h3>
+    <textarea id="reportText" rows="4" placeholder="อธิบายปัญหาที่พบ..." onkeydown="handleReportEnter(event)"></textarea>
     <div class="row">
-      <button class="btn btn-outline" style="flex:1;" onclick="closeModal('reportOverlay')">ยกเลิก</button>
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('reportOverlay')">ยกเลิก</button>
       <button class="btn" style="flex:1;" onclick="submitReport()">ส่งรายงาน</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: ตารางเรียน -->
-<div class="overlay" id="scheduleOverlay" style="display:none;" onclick="if(event.target===this) closeModal('scheduleOverlay')">
-  <div class="card" style="width:480px;">
-    <h3>📅 ตารางเรียนประจำห้อง</h3>
-    <div id="scheduleContainer" style="margin:12px 0;">
-      <p style="color:#888;font-size:.85rem;text-align:center;">ยังไม่ได้อัปโหลดตารางเรียน</p>
+<!-- หน้าต่างแก้ไขชื่อผู้ใช้ (User Self-Name Edit) -->
+<div class="overlay" id="editProfileOverlay" style="display:none;" onclick="if(event.target===this) closeModal('editProfileOverlay')">
+  <div class="card">
+    <button class="close-x" onclick="closeModal('editProfileOverlay')">&times;</button>
+    <h3>✏️ แก้ไขชื่อผู้ใช้</h3>
+    <div style="text-align:left;font-size:.8rem;color:#64748b;margin-bottom:6px;">
+      <div>UID: <span id="profileUidText" style="font-family:monospace;">-</span></div>
+      <div>Email: <span id="profileEmailText">-</span></div>
     </div>
-    <button class="btn" onclick="closeModal('scheduleOverlay')">ปิด</button>
+    <input type="text" id="newDisplayNameInput" placeholder="ใส่ชื่อใหม่ของคุณ..." maxlength="20">
+    <div class="row">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('editProfileOverlay')">ยกเลิก</button>
+      <button class="btn" style="flex:1;" onclick="saveMyDisplayName()">บันทึก</button>
+    </div>
   </div>
 </div>
 
-<!-- APP MAIN LAYOUT -->
-<div class="app-layout">
+<!-- หน้าต่างดูประวัติผู้ใช้ (Admin History Modal) -->
+<div class="overlay" id="userHistoryOverlay" style="display:none;" onclick="if(event.target===this) closeModal('userHistoryOverlay')">
+  <div class="card" style="width:450px;max-width:95vw;text-align:left;">
+    <button class="close-x" onclick="closeModal('userHistoryOverlay')">&times;</button>
+    <h3 style="color:var(--primary-dark);margin-bottom:12px;">📜 ACCOUNT HISTORY</h3>
+    <div id="userHistoryContent" style="font-size:.85rem;display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto;">
+    </div>
+  </div>
+</div>
 
-  <!-- ==================== 1. CHAT VIEW (ผู้ใช้ทั่วไป & แอดมินใช้งาน) ==================== -->
-  <div class="chat-view" id="chatViewSection">
-    <div class="chat-container">
-      <div class="chat-header">
-        <div>
-          <div class="title" id="headerAppTitle">Classroom Hub</div>
-          <div class="sub">ระบบห้องเรียนออนไลน์ & Realtime Chat</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <button class="btn btn-warning" id="adminSwitchBtn" style="display:none;font-size:.78rem;padding:6px 12px;" onclick="switchToAdminUI()">🛠 Full Admin Control</button>
-          <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.4);font-size:.78rem;padding:6px 12px;" onclick="logout()">ออกจากระบบ</button>
-        </div>
-      </div>
+<!-- ห้องแชทหลัก (USER AREA) -->
+<div class="chat-container" id="chatContainer" style="display:none;">
+  <div class="chat-header">
+    <div>
+      <div class="title" id="chatTitleHeader">Classroom Cloud Chat</div>
+      <div class="sub">ห้องเรียนออนไลน์ • Realtime Chat & Hub</div>
+    </div>
+    <div class="online-badge"><span class="online-dot"></span><span id="onlineCount">0</span> ออนไลน์</div>
+  </div>
+  <div class="pinned-banner" id="pinnedBanner"></div>
 
-      <!-- Shortcuts Dynamic Bar -->
-      <div class="shortcuts-bar" id="userShortcutsBar">
-        <!-- Dynamic Links will be rendered here -->
-      </div>
+  <!-- Shortcuts Menu Bar -->
+  <div class="shortcuts-bar" id="shortcutsBarContainer"></div>
 
-      <div class="pinned-banner" id="pinnedBanner"></div>
+  <!-- Control Bar ปรับปรุงการเลือกประเภทแชท -->
+  <div class="control-bar">
+    <span class="user-tag" id="myNicknameTag" onclick="openEditProfile()" title="คลิกเพื่อเปลี่ยนชื่อ">-</span>
+    
+    <!-- แบ่งประเภทแชทอย่างชัดเจน -->
+    <select id="chatMode" onchange="handleChatModeChange()">
+      <optgroup label="💬 แชทหลัก">
+        <option value="group">💬 แชทรวม (สาธารณะ)</option>
+        <option value="private">🔒 แชทเดี่ยว (ส่วนตัว)</option>
+      </optgroup>
+      <optgroup label="👥 กลุ่มที่ฉันอยู่" id="customGroupOptGroup">
+        <!-- จะถูกสร้าง Dynamic ด้วย JavaScript -->
+      </optgroup>
+    </select>
 
-      <div class="control-bar">
-        <span class="user-tag" id="myNicknameTag">User</span>
-        <button class="btn btn-outline" style="padding:4px 8px;font-size:.75rem;" onclick="openModal('editProfileOverlay')">✏️ เปลี่ยนชื่อ</button>
+    <select id="targetUserSelect" style="display:none;">
+      <option value="">-- เลือกผู้รับ --</option>
+    </select>
 
-        <select id="chatMode" onchange="togglePrivateInput()" style="padding:5px 8px;border-radius:8px;font-size:.82rem;">
-          <option value="group">💬 แชทกลุ่ม</option>
-          <option value="private">🔒 แชทเดี่ยว</option>
-        </select>
-        <select id="targetUserSelect" style="display:none;padding:5px 8px;border-radius:8px;font-size:.82rem;">
-          <option value="">-- เลือกผู้รับ --</option>
-        </select>
+    <button class="icon-btn" onclick="openCreateGroupModal()" style="background:#eef2ff;color:var(--primary-dark);border-color:#d0d9ff;"><i class="fa-solid fa-users-between-lines"></i> ➕ สร้างกลุ่ม</button>
+    <button class="icon-btn" onclick="openModal('reportOverlay')"><i class="fa-solid fa-bug"></i> รายงาน</button>
+    <button class="icon-btn admin-pill" id="adminPanelBtn" style="display:none;" onclick="openFullAdminCenter()"><i class="fa-solid fa-screwdriver-wrench"></i> Admin<span class="notif-badge" id="reportBadge" style="display:none;">0</span></button>
+  </div>
 
-        <button class="btn btn-outline" style="padding:4px 8px;font-size:.75rem;margin-left:auto;" onclick="openModal('scheduleOverlay')">📅 ตารางเรียน</button>
-        <button class="btn btn-outline" style="padding:4px 8px;font-size:.75rem;" onclick="openModal('reportOverlay')">🐞 แจ้งบั๊ก</button>
-      </div>
+  <!-- แถบจัดการกลุ่มสำหรับผู้สร้างกลุ่ม -->
+  <div class="group-info-bar" id="groupInfoBar">
+    <span>👑 คุณคือผู้สร้างกลุ่มนี้</span>
+    <button class="icon-btn btn-sm" onclick="openManageGroupModal()"><i class="fa-solid fa-gear"></i> ตั้งค่ากลุ่ม / เตะคนออก</button>
+  </div>
 
-      <div class="chat-messages" id="chatBox"></div>
+  <div class="chat-messages" id="chatBox"></div>
 
-      <div class="chat-input">
-        <label for="fileInput" style="cursor:pointer;padding:8px 12px;background:#f0f2f5;border-radius:14px;font-size:.8rem;font-weight:600;">📎</label>
-        <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
-        <span id="selectedFileLabel" style="font-size:.72rem;color:var(--primary);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-        <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter'){sendMessage();}">
-        <button class="btn" id="sendBtn" onclick="sendMessage()">ส่ง</button>
-      </div>
+  <div class="chat-input">
+    <label for="fileInput" class="file-label">📎</label>
+    <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
+    <span class="selected-file" id="selectedFileLabel"></span>
+    <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter'){sendMessage();}">
+    <button class="btn" id="sendBtn" onclick="sendMessage()">ส่ง</button>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- FULL ADMIN CONTROL CENTER -->
+<!-- ========================================================= -->
+<div id="adminContainer">
+  <!-- Admin Sidebar Navigation (เอา Schedule ออกแล้ว) -->
+  <div class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-header">
+      <i class="fa-solid fa-shield-halved fa-lg"></i>
+      <span>ADMIN CENTER</span>
+    </div>
+    <div class="admin-nav">
+      <div class="admin-nav-item active" onclick="switchAdminTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('users', this)"><i class="fa-solid fa-users"></i> Users</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('bans', this)"><i class="fa-solid fa-ban"></i> Bans</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('chat', this)"><i class="fa-solid fa-comments"></i> Chat</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('announce', this)"><i class="fa-solid fa-bullhorn"></i> Announce</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('reports', this)"><i class="fa-solid fa-bug"></i> Bug Reports</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('errors', this)"><i class="fa-solid fa-triangle-exclamation"></i> Errors</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('diagnostics', this)"><i class="fa-solid fa-puzzle-piece"></i> Diagnostics</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('shortcuts', this)"><i class="fa-solid fa-link"></i> Shortcuts</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('appearance', this)"><i class="fa-solid fa-palette"></i> Appearance</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('settings', this)"><i class="fa-solid fa-gear"></i> Settings</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('activity', this)"><i class="fa-solid fa-clock-rotate-left"></i> Activity</div>
+    </div>
+    <div class="admin-sidebar-footer">
+      <button onclick="closeAdminCenter()"><i class="fa-solid fa-arrow-left"></i> ← กลับห้องแชท</button>
     </div>
   </div>
 
-  <!-- ==================== 2. ADMIN CONTROL CENTER (FULL SCREEN UI) ==================== -->
-  <div class="admin-view" id="adminViewSection" style="display:none;">
-    <!-- Sidebar Menu -->
-    <div class="admin-sidebar">
-      <div class="brand">🛠 Admin Control Center</div>
-      <ul class="admin-menu">
-        <li class="active" onclick="switchAdminPage('dash')">📊 Dashboard</li>
-        <li onclick="switchAdminPage('users')">👥 User Management</li>
-        <li onclick="switchAdminPage('history')">📜 Account History</li>
-        <li onclick="switchAdminPage('bugs')">🐞 Bug Reports <span class="badge badge-danger" id="adminBugBadge" style="display:none;margin-left:auto;">0</span></li>
-        <li onclick="switchAdminPage('errors')">⚠️ Error Monitor</li>
-        <li onclick="switchAdminPage('scripts')">🧩 Script Diagnostics</li>
-        <li onclick="switchAdminPage('shortcuts')">🔗 Link Shortcuts</li>
-        <li onclick="switchAdminPage('settings')">⚙️ System Settings</li>
-      </ul>
-      <div class="footer-btn">
-        <button class="btn btn-outline" style="width:100%;color:#a0aec0;border-color:#4a5568;" onclick="switchToChatUI()">← กลับหน้าห้องแชท</button>
+  <!-- Admin Main Content Area -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-title">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <span id="adminSectionTitle">🛠 Dashboard</span>
+      </div>
+      <div class="admin-user-info">
+        <i class="fa-solid fa-user-shield"></i>
+        <span id="adminUserDisplayName">Admin Account</span>
       </div>
     </div>
 
-    <!-- Admin Content Area -->
-    <div class="admin-content">
-      <div class="admin-header">
-        <h2 id="adminPageTitle" style="font-size:1.2rem;color:#1a202c;">📊 Dashboard ภาพรวมระบบ</h2>
-        <div style="font-size:.85rem;color:#718096;" id="adminUserTag">Admin Account</div>
-      </div>
-
-      <div class="admin-body">
-        
-        <!-- PAGE 1: DASHBOARD -->
-        <div class="page-section active" id="page-dash">
-          <div class="dash-grid">
-            <div class="stat-card"><div class="lbl">ผู้ใช้ทั้งหมด</div><div class="val" id="statTotalUsers">0</div></div>
-            <div class="stat-card"><div class="lbl">กำลังออนไลน์</div><div class="val" id="statOnlineUsers" style="color:var(--success);">0</div></div>
-            <div class="stat-card"><div class="lbl">ผู้ถูกแบน</div><div class="val" id="statBannedUsers" style="color:var(--danger);">0</div></div>
-            <div class="stat-card"><div class="lbl">รายงานบั๊กใหม่</div><div class="val" id="statNewBugs" style="color:var(--warning);">0</div></div>
-            <div class="stat-card"><div class="lbl">Error ที่พบ</div><div class="val" id="statTotalErrors" style="color:var(--danger);">0</div></div>
-          </div>
-
-          <h3 style="font-size:1rem;margin-bottom:10px;">📋 บันทึกกิจกรรมล่าสุด (Activity Logs)</h3>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>เวลา</th><th>ผู้ทำรายการ</th><th>กิจกรรม / รายละเอียด</th></tr></thead>
-              <tbody id="dashActivityLogsTable"><tr><td colspan="3" style="text-align:center;">ไม่มีข้อมูลกิจกรรม</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAGE 2: USER MANAGEMENT -->
-        <div class="page-section" id="page-users">
-          <div style="display:flex;gap:12px;margin-bottom:14px;">
-            <input type="text" id="userSearchInput" placeholder="ค้นหาตาม ชื่อ / UID / Email..." oninput="renderUsersTable()" style="max-width:320px;padding:8px 12px;border:1px solid #cbd5e0;border-radius:8px;">
-          </div>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>ชื่อแสดงผล</th>
-                  <th>UID</th>
-                  <th>Email</th>
-                  <th>สถานะ</th>
-                  <th>วันที่สมัคร</th>
-                  <th>การจัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="userManagementTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAGE 3: ACCOUNT HISTORY -->
-        <div class="page-section" id="page-history">
-          <h3 style="font-size:1rem;margin-bottom:8px;">📜 ประวัติการผูกบัญชีและเปลี่ยนข้อมูล (Account History Logs)</h3>
-          <p style="font-size:.82rem;color:#718096;margin-bottom:12px;">ตรวจสอบการผูก Email กับ UID และประวัติการแก้ไขข้อมูลบัญชีผู้ใช้</p>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>เวลา</th><th>UID</th><th>Email</th><th>เหตุการณ์ / การเปลี่ยนแปลง</th></tr></thead>
-              <tbody id="accountHistoryTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAGE 4: BUG REPORTS -->
-        <div class="page-section" id="page-bugs">
-          <h3 style="font-size:1rem;margin-bottom:12px;">🐞 รายการแจ้งปัญหาและบั๊กระบบ</h3>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>เวลา</th><th>ผู้รายงาน</th><th>รายละเอียดปัญหา</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
-              <tbody id="bugReportsTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAGE 5: ERROR MONITOR -->
-        <div class="page-section" id="page-errors">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="font-size:1rem;">⚠️ ระบบดักจับ Error สด (Error Monitor)</h3>
-            <button class="btn btn-danger" style="padding:4px 10px;font-size:.78rem;" onclick="clearErrorLogs()">ล้าง Log Error ทั้งหมด</button>
-          </div>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>เวลา</th><th>UID/ผู้ใช้</th><th>ประเภท Error</th><th>ข้อความ Error</th></tr></thead>
-              <tbody id="errorMonitorTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAGE 6: SCRIPT DIAGNOSTICS -->
-        <div class="page-section" id="page-scripts">
-          <h3 style="font-size:1rem;margin-bottom:12px;">🧩 ตรวจสอบสถานะการเชื่อมต่อระบบ (System Diagnostics)</h3>
-          <div class="table-container" style="max-width:600px;">
-            <table>
-              <thead><tr><th>โมดูลระบบ</th><th>สถานะ</th><th>การตอบสนอง</th></tr></thead>
-              <tbody id="scriptDiagnosticsTable">
-                <tr><td>Firebase Auth</td><td><span class="badge badge-success">🟢 ปกติ</span></td><td>Connected</td></tr>
-                <tr><td>Realtime Database</td><td><span class="badge badge-success">🟢 ปกติ</span></td><td>Connected (asia-southeast1)</td></tr>
-                <tr><td>Firebase Storage</td><td><span class="badge badge-success">🟢 ปกติ</span></td><td>Ready</td></tr>
-                <tr><td>Chat Engine</td><td><span class="badge badge-success">🟢 ปกติ</span></td><td>Listening</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <button class="btn" style="margin-top:14px;" onclick="runDiagnostics()">🔍 สแกนตรวจสอบระบบสด</button>
-        </div>
-
-        <!-- PAGE 7: LINK SHORTCUTS -->
-        <div class="page-section" id="page-shortcuts">
-          <h3 style="font-size:1rem;margin-bottom:8px;">🔗 จัดการปุ่มเมนูลัด (Shortcut Management)</h3>
-          <p style="font-size:.82rem;color:#718096;margin-bottom:14px;">สร้างลิงก์เว็บไซต์สำคัญ เช่น YouTube, Facebook, Discord, Google Drive ให้ผู้ใช้ทั่วไปกดปุ่มเปิดได้ทันที</p>
-          
-          <div class="card" style="width:100%;max-width:500px;box-shadow:none;border:1px solid #e2e8f0;margin-bottom:20px;">
-            <h4>➕ เพิ่ม ShortLink ใหม่</h4>
-            <input type="text" id="shortTitle" placeholder="ชื่อปุ่ม (เช่น Discord ห้องเรียน)">
-            <input type="text" id="shortUrl" placeholder="URL เว็บไซต์ (เช่น https://discord.gg/...)">
-            <input type="text" id="shortIcon" placeholder="ไอคอน Emoji (เช่น 💬, 🔴, 📁)">
-            <button class="btn" onclick="addShortcutLink()">เพิ่ม ShortLink</button>
-          </div>
-
-          <div class="table-container">
-            <table>
-              <thead><tr><th>ไอคอน</th><th>ชื่อปุ่ม</th><th>URL</th><th>การจัดการ</th></tr></thead>
-              <tbody id="adminShortcutsTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PAGE 8: SYSTEM SETTINGS -->
-        <div class="page-section" id="page-settings">
-          <h3 style="font-size:1rem;margin-bottom:12px;">⚙️ ตั้งค่าระบบห้องเรียน</h3>
-          <div style="max-width:500px;display:flex;flex-direction:column;gap:12px;background:#fff;padding:20px;border-radius:12px;border:1px solid #e2e8f0;">
-            <label style="font-size:.85rem;font-weight:600;">ชื่อเว็บไซต์/ห้องเรียน</label>
-            <input type="text" id="setAppTitle" placeholder="Classroom Hub">
-
-            <label style="font-size:.85rem;font-weight:600;">ข้อความประกาศปักหมุด</label>
-            <input type="text" id="setBannerText" placeholder="เช่น พรุ่งนี้มีสอบย่อยวิชาคณิตศาสตร์...">
-
-            <label style="font-size:.85rem;font-weight:600;">URL รูปตารางเรียน</label>
-            <div style="display:flex;gap:6px;">
-              <input type="text" id="setScheduleUrl" placeholder="https://.../schedule.png">
-              <label for="adminSchedFile" class="btn btn-outline" style="cursor:pointer;white-space:nowrap;font-size:.8rem;">📷 อัปโหลดรูป</label>
-              <input type="file" id="adminSchedFile" accept="image/*" style="display:none;" onchange="uploadAdminScheduleImage()">
-            </div>
-
-            <label style="font-size:.85rem;font-weight:600;">สีธีมหลัก</label>
-            <input type="color" id="setPrimaryColor" value="#4b6ef5" style="height:40px;cursor:pointer;">
-
-            <button class="btn btn-danger" style="margin-top:10px;" onclick="clearAllChatMessages()">🚨 ล้างประวัติแชททั้งหมดในระบบ</button>
-            <button class="btn" style="margin-top:10px;" onclick="saveSystemSettings()">💾 บันทึกการตั้งค่า</button>
-          </div>
-        </div>
-
-      </div>
+    <div class="admin-content" id="adminContentArea">
+      <!-- Dynamic Content Rendered Here -->
     </div>
   </div>
-
 </div>
 
 <script>
-/* 🔴 CONFIGURATION FIREBASE REALTIME DATABASE & AUTHENTICATION */
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyC9emUQgRfiMmFML272Ue2rLimj6g3B4q8",
   authDomain: "kkkk-c0436.firebaseapp.com",
@@ -403,17 +351,24 @@ const firebaseConfig = {
   databaseURL: "https://kkkk-c0436-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
-const ADMIN_EMAIL = "admin@gmail.com"; // อีเมลที่ต้องการให้ได้รับสิทธิ์ Admin อัตโนมัติ
+const ADMIN_PASSWORD = "admin1234"; 
 
-var db, storage, auth;
-var myUid = '', myEmail = '', myDisplayName = '', myRole = 'user';
-var isAuthRegisterMode = false;
-var usersCache = {}, reportsCache = {}, shortcutsCache = {};
+var myName = '', myUid = '', myEmail = 'ไม่มีข้อมูล', isAdmin = false;
+var selectedFile = null, onlineUsersCache = {}, allUsersCache = {}, reportsCache = {}, shortcutsCache = {};
+var customGroupsCache = {}; // แคชข้อมูลกลุ่มแชทที่กำหนดเอง
+var systemSettings = { allowNameChange: true, allowFileUpload: true, maintenanceMode: false, maxFileSizeMB: 10 }; // System Settings
+var db = null, storage = null, auth = null;
+var currentAdminTab = 'dashboard';
 
-// Global Error Catching for Error Monitor
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-  logErrorToFirebase("JavaScript Error", `${msg} (Line ${lineNo}:${columnNo})`);
-  return false;
+// Global Diagnostic Status Flags
+var systemDiagnostics = {
+  auth: { status: 'ok', name: 'Firebase Auth', msg: 'Working' },
+  rtdb: { status: 'ok', name: 'Realtime Database', msg: 'Working' },
+  storage: { status: 'ok', name: 'Firebase Storage', msg: 'Working' },
+  chat: { status: 'ok', name: 'Chat System', msg: 'Working' },
+  privateChat: { status: 'ok', name: 'Private Chat', msg: 'Working' },
+  fileUpload: { status: 'ok', name: 'File Upload', msg: 'Working' },
+  reports: { status: 'ok', name: 'Report System', msg: 'Working' }
 };
 
 try {
@@ -422,643 +377,1277 @@ try {
   storage = firebase.storage();
   auth = firebase.auth();
 } catch (err) {
+  logSystemError('Firebase Init', err.message);
   alert('ไม่สามารถเชื่อมต่อ Firebase ได้: ' + err.message);
 }
 
-// Authentication State Listener
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    myUid = user.uid;
-    myEmail = user.email || '';
-    
-    // ตรวจสอบการแบน
-    const banSnap = await db.ref('bannedUsers/' + myUid).once('value');
-    const emailBanSnap = await db.ref('bannedEmails/' + myEmail.replace(/\./g, '_')).once('value');
-    
-    if (banSnap.exists() || emailBanSnap.exists()) {
-      const reason = banSnap.val()?.reason || emailBanSnap.val()?.reason || 'คุณถูกแบนจากระบบ';
-      alert('🚫 เข้าสู่ระบบไม่สำเร็จ: ' + reason);
-      auth.signOut();
-      return;
-    }
+// Error Monitor Tracker
+function logSystemError(type, message) {
+  console.error(`[${type}]`, message);
+  if (db) {
+    db.ref('errors').push({
+      time: new Date().toLocaleString('th-TH'),
+      type: type,
+      message: message,
+      uid: myUid || 'Unknown',
+      user: myName || 'Unknown',
+      ts: Date.now()
+    });
+  }
+}
 
-    document.getElementById('authOverlay').style.display = 'none';
+// Global Activity Logger
+function logActivity(actor, uid, action, details) {
+  if (db) {
+    db.ref('activities').push({
+      time: new Date().toLocaleTimeString('th-TH'),
+      actor: actor,
+      uid: uid,
+      action: action,
+      details: details,
+      ts: Date.now()
+    });
+  }
+}
 
-    // อ่านหรือสร้างโปรไฟล์ผู้ใช้ใน DB
-    const userRef = db.ref('users/' + myUid);
-    const snap = await userRef.once('value');
-    
-    if (!snap.exists()) {
-      myDisplayName = myEmail.split('@')[0];
-      myRole = (myEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'user';
-      await userRef.set({
-        uid: myUid,
-        email: myEmail,
-        displayName: myDisplayName,
-        role: myRole,
-        status: 'online',
-        createdAt: Date.now()
-      });
-      logAccountHistory(myUid, myEmail, `ลงทะเบียนบัญชีใหม่ (${myRole})`);
-    } else {
-      const userData = snap.val();
-      myDisplayName = userData.displayName || myEmail.split('@')[0];
-      myRole = userData.role || 'user';
-      await userRef.update({ status: 'online' });
-    }
-
-    userRef.onDisconnect().update({ status: 'offline' });
-
-    setupUIForUser();
-    initRealtimeListeners();
-  } else {
-    document.getElementById('authOverlay').style.display = 'flex';
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeModal('reportOverlay');
+    closeModal('createGroupOverlay');
+    closeModal('manageGroupOverlay');
+    closeModal('editProfileOverlay');
+    closeModal('userHistoryOverlay');
   }
 });
 
-function toggleAuthMode() {
-  isAuthRegisterMode = !isAuthRegisterMode;
-  document.getElementById('authTitle').textContent = isAuthRegisterMode ? 'สมัครสมาชิก Classroom Hub' : 'เข้าสู่ระบบ Classroom Hub';
-  document.getElementById('authName').style.display = isAuthRegisterMode ? 'block' : 'none';
-  document.getElementById('authSubmitBtn').textContent = isAuthRegisterMode ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ';
-  document.getElementById('authToggleBtn').textContent = isAuthRegisterMode ? 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ' : 'ยังไม่มีบัญชี? สมัครสมาชิกที่นี่';
+function handleReportEnter(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    submitReport();
+  }
 }
 
-async function handleAuthSubmit() {
-  const email = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPassword').value;
-  const name = document.getElementById('authName').value.trim();
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
+}
 
-  if (!email || !password) return alert('กรุณากรอกอีเมลและรหัสผ่าน');
+function escapeHtml(str){
+  return str ? String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
+}
+
+function toggleAdminField(){
+  const el = document.getElementById('adminPassInput');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function login(){
+  const name = document.getElementById('nicknameInput').value.trim();
+  const adminPass = document.getElementById('adminPassInput').value;
+
+  if (!name) return alert('กรุณาใส่ชื่อเล่น');
+  if (document.getElementById('adminPassInput').style.display !== 'none' && adminPass){
+    if (adminPass !== ADMIN_PASSWORD) return alert('รหัสแอดมินไม่ถูกต้อง');
+    isAdmin = true;
+  }
 
   try {
-    if (isAuthRegisterMode) {
-      if (!name) return alert('กรุณากรอกชื่อเล่น/ชื่อแสดงผล');
-      const res = await auth.createUserWithEmailAndPassword(email, password);
-      await db.ref('users/' + res.user.uid).set({
-        uid: res.user.uid,
-        email: email,
-        displayName: name,
-        role: (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'user',
-        status: 'online',
-        createdAt: Date.now()
-      });
-      logActivity(name, 'สมัครสมาชิกเข้าสู่ระบบ');
-    } else {
-      await auth.signInWithEmailAndPassword(email, password);
+    const userCredential = await auth.signInAnonymously();
+    myUid = userCredential.user.uid;
+    myName = name;
+    myEmail = userCredential.user.email || 'ไม่มีข้อมูล';
+
+    // เช็คสิทธิ์ Ban
+    const banSnap = await db.ref('bans/' + myUid).once('value');
+    if (banSnap.exists()) {
+      const banData = banSnap.val();
+      alert(`🚫 คุณถูกแบนจากการใช้งานระบบ\nเหตุผล: ${banData.reason || 'ไม่ระบุ'}`);
+      return;
     }
-  } catch (err) {
-    alert('เกิดข้อผิดพลาด: ' + err.message);
-    logErrorToFirebase('Auth Error', err.message);
+
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('chatContainer').style.display = 'flex';
+    document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+    if (isAdmin) document.getElementById('adminPanelBtn').style.display = 'inline-flex';
+
+    // บันทึก/อัปเดตข้อมูลผู้ใช้แบบละเอียดใน DB
+    const userRef = db.ref('users/' + myUid);
+    const existingSnap = await userRef.once('value');
+    const existingData = existingSnap.val() || {};
+
+    const userData = {
+      uid: myUid,
+      name: myName,
+      email: myEmail,
+      createdAt: existingData.createdAt || new Date().toLocaleDateString('th-TH'),
+      status: 'normal',
+      online: true,
+      admin: isAdmin,
+      lastLogin: new Date().toLocaleString('th-TH')
+    };
+
+    await userRef.set(userData);
+    userRef.child('online').onDisconnect().set(false);
+
+    db.ref(`userHistory/${myUid}/loginHistory`).push(new Date().toLocaleString('th-TH'));
+    logActivity(myName, myUid, 'User Login', 'เข้าสู่ระบบแชท');
+
+    initRealtimeListeners();
+  } catch (error) {
+    logSystemError('Login Failed', error.message);
+    alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
   }
 }
 
-function logout() {
-  if (myUid) db.ref('users/' + myUid + '/status').set('offline');
-  auth.signOut().then(() => location.reload());
-}
+function initRealtimeListeners(){
+  db.ref('users/' + myUid).on('value', (snap) => {
+    if (!snap.exists()) {
+      alert('คุณถูก Admin เตะออกจากระบบ');
+      location.reload();
+    }
+  });
 
-function setupUIForUser() {
-  document.getElementById('myNicknameTag').textContent = myDisplayName + (myRole === 'admin' ? ' 🛠' : '');
-  if (myRole === 'admin') {
-    document.getElementById('adminSwitchBtn').style.display = 'inline-block';
-    document.getElementById('adminUserTag').textContent = `Admin: ${myDisplayName} (${myEmail})`;
-  }
-}
+  db.ref('bans/' + myUid).on('value', (snap) => {
+    if (snap.exists()) {
+      alert('🚫 บัญชีของคุณถูกแบนโดย Admin');
+      location.reload();
+    }
+  });
 
-function initRealtimeListeners() {
+  // อ่านข้อมูลผู้ใช้ทั้งหมด
+  db.ref('users').on('value', (snapshot) => {
+    allUsersCache = snapshot.val() || {};
+    onlineUsersCache = {};
+    Object.keys(allUsersCache).forEach(k => {
+      if (allUsersCache[k].online) onlineUsersCache[k] = allUsersCache[k];
+    });
+
+    renderTargetSelect(onlineUsersCache);
+    const count = Object.keys(onlineUsersCache).length;
+    document.getElementById('onlineCount').textContent = count;
+
+    if (isAdmin && currentAdminTab === 'users') renderAdminUsersSection();
+    if (isAdmin && currentAdminTab === 'dashboard') renderAdminDashboard();
+  });
+
+  // อ่านกลุ่มแชทที่กำหนดเอง (Custom Groups)
+  db.ref('customGroups').on('value', (snapshot) => {
+    customGroupsCache = snapshot.val() || {};
+    renderCustomGroupSelectOptions();
+    handleChatModeChange(); // อัปเดต UI แถบผู้สร้าง
+  });
+
   // อ่านข้อความแชท
-  db.ref('messages').on('value', (snap) => {
+  db.ref('messages').on('value', (snapshot) => {
     const chatBox = document.getElementById('chatBox');
-    chatBox.innerHTML = '';
-    const msgs = snap.val() || {};
-    Object.keys(msgs).forEach(key => {
-      const data = msgs[key];
-      if (data.mode === 'group' || data.senderUid === myUid || data.targetUid === myUid) {
+    chatBox.innerHTML = ''; 
+    const messages = snapshot.val() || {};
+    const mode = document.getElementById('chatMode').value;
+    const targetUid = document.getElementById('targetUserSelect').value;
+
+    Object.keys(messages).forEach(key => {
+      const data = messages[key];
+      // กรองข้อความตามประเภทแชทที่เลือก
+      if (mode === 'group' && data.mode === 'group') {
+        renderMessage(key, data, data.senderUid === myUid);
+      } else if (mode === 'private' && data.mode === 'private') {
+        if ((data.senderUid === myUid && data.targetUid === targetUid) || (data.senderUid === targetUid && data.targetUid === myUid)) {
+          renderMessage(key, data, data.senderUid === myUid);
+        }
+      } else if (mode.startsWith('custom_') && data.mode === mode) {
         renderMessage(key, data, data.senderUid === myUid);
       }
     });
   });
 
-  // อ่านผู้ใช้ทั้งหมด
-  db.ref('users').on('value', (snap) => {
-    usersCache = snap.val() || {};
-    renderUserSelectOptions();
-    renderUsersTable();
-    updateDashboardStats();
+  // อ่านตั้งค่า Realtime + System Settings ที่ใช้ได้จริง
+  db.ref('settings').on('value', (snapshot) => {
+    const s = snapshot.val() || {};
+    if (s.system) {
+      systemSettings = Object.assign(systemSettings, s.system);
+      // เช็ค Maintenance Mode
+      if (systemSettings.maintenanceMode && !isAdmin) {
+        alert('⚠️ ระบบปิดปรับปรุงชั่วคราวโดยผู้ดูแลระบบ');
+        location.reload();
+      }
+    }
+    applySettings(s);
   });
 
-  // อ่าน ShortLinks
-  db.ref('shortcuts').on('value', (snap) => {
-    shortcutsCache = snap.val() || {};
-    renderShortcutsUI();
+  db.ref('shortcuts').on('value', (snapshot) => {
+    shortcutsCache = snapshot.val() || {};
+    renderUserShortcuts(shortcutsCache);
+    if (isAdmin && currentAdminTab === 'shortcuts') renderAdminShortcutsSection();
   });
 
-  // อ่านการตั้งค่าระบบ
-  db.ref('settings').on('value', (snap) => {
-    applySystemSettings(snap.val() || {});
+  if (isAdmin){
+    db.ref('reports').on('value', (snapshot) => {
+      reportsCache = snapshot.val() || {};
+      const openCount = Object.values(reportsCache).filter(r => r.status !== 'resolved').length;
+      updateReportBadge(openCount);
+      if (currentAdminTab === 'reports') renderAdminReportsSection();
+    });
+  }
+}
+
+function renderTargetSelect(users){
+  const select = document.getElementById('targetUserSelect');
+  const current = select.value;
+  select.innerHTML = '<option value="">-- เลือกผู้รับ --</option>';
+  Object.values(users).forEach(u => {
+    if (u.uid !== myUid) {
+      const opt = document.createElement('option');
+      opt.value = u.uid;
+      opt.textContent = u.name + (u.admin ? ' 🛠' : '');
+      select.appendChild(opt);
+    }
+  });
+  select.value = current;
+}
+
+// ---------------------------------------------------------
+// ระบบแบ่งประเภทแชท & กลุ่มที่กำหนดเอง (CUSTOM GROUPS)
+// ---------------------------------------------------------
+function renderCustomGroupSelectOptions(){
+  const optGroup = document.getElementById('customGroupOptGroup');
+  optGroup.innerHTML = '';
+
+  let myGroupCount = 0;
+  Object.keys(customGroupsCache).forEach(groupId => {
+    const group = customGroupsCache[groupId];
+    // แสดงเฉพาะกลุ่มที่ผู้ใช้เป็นสมาชิก หรือเป็น Owner หรือเป็น Admin
+    if (group.ownerUid === myUid || (group.members && group.members[myUid]) || isAdmin) {
+      myGroupCount++;
+      const opt = document.createElement('option');
+      opt.value = 'custom_' + groupId;
+      opt.textContent = '👥 ' + group.name;
+      optGroup.appendChild(opt);
+    }
   });
 
-  // อ่านรายงานบั๊ก
-  db.ref('reports').on('value', (snap) => {
-    reportsCache = snap.val() || {};
-    renderBugReportsTable();
-  });
+  if (myGroupCount === 0) {
+    const opt = document.createElement('option');
+    opt.value = "";
+    opt.disabled = true;
+    opt.textContent = "(ไม่มีกลุ่มที่คุณเข้าร่วม)";
+    optGroup.appendChild(opt);
+  }
+}
 
-  // อ่าน Error Logs
-  db.ref('errors').on('value', (snap) => {
-    renderErrorLogsTable(snap.val() || {});
-  });
+function handleChatModeChange(){
+  const mode = document.getElementById('chatMode').value;
+  const targetSelect = document.getElementById('targetUserSelect');
+  const groupInfoBar = document.getElementById('groupInfoBar');
 
-  // อ่าน Activity Logs
-  db.ref('activityLogs').limitToLast(15).on('value', (snap) => {
-    renderActivityLogsTable(snap.val() || {});
-  });
+  if (mode === 'private') {
+    targetSelect.style.display = 'inline-block';
+    groupInfoBar.style.display = 'none';
+  } else {
+    targetSelect.style.display = 'none';
+    if (mode.startsWith('custom_')) {
+      const groupId = mode.replace('custom_', '');
+      const group = customGroupsCache[groupId];
+      if (group && (group.ownerUid === myUid || isAdmin)) {
+        groupInfoBar.style.display = 'flex';
+      } else {
+        groupInfoBar.style.display = 'none';
+      }
+    } else {
+      groupInfoBar.style.display = 'none';
+    }
+  }
 
-  // อ่าน Account History Logs
-  db.ref('accountHistory').limitToLast(20).on('value', (snap) => {
-    renderAccountHistoryTable(snap.val() || {});
+  // โหลดข้อความใหม่เมื่อเปลี่ยนโหมด
+  db.ref('messages').once('value', snapshot => {
+    const chatBox = document.getElementById('chatBox');
+    chatBox.innerHTML = '';
+    const messages = snapshot.val() || {};
+    const targetUid = targetSelect.value;
+
+    Object.keys(messages).forEach(key => {
+      const data = messages[key];
+      if (mode === 'group' && data.mode === 'group') {
+        renderMessage(key, data, data.senderUid === myUid);
+      } else if (mode === 'private' && data.mode === 'private') {
+        if ((data.senderUid === myUid && data.targetUid === targetUid) || (data.senderUid === targetUid && data.targetUid === myUid)) {
+          renderMessage(key, data, data.senderUid === myUid);
+        }
+      } else if (mode.startsWith('custom_') && data.mode === mode) {
+        renderMessage(key, data, data.senderUid === myUid);
+      }
+    });
   });
 }
 
-/* ==================== USER CHAT FUNCTIONS ==================== */
-function renderMessage(key, data, isMine) {
+function openCreateGroupModal(){
+  const container = document.getElementById('groupMemberCheckboxList');
+  container.innerHTML = '';
+  document.getElementById('newGroupNameInput').value = '';
+
+  Object.values(allUsersCache).forEach(u => {
+    if (u.uid !== myUid) {
+      const label = document.createElement('label');
+      label.className = 'user-checkbox-item';
+      label.innerHTML = `<input type="checkbox" value="${u.uid}" class="group-member-checkbox"> ${escapeHtml(u.name)}`;
+      container.appendChild(label);
+    }
+  });
+
+  openModal('createGroupOverlay');
+}
+
+function createCustomGroup(){
+  const name = document.getElementById('newGroupNameInput').value.trim();
+  if (!name) return alert('กรุณาตั้งชื่อกลุ่ม');
+
+  const selectedBoxes = document.querySelectorAll('.group-member-checkbox:checked');
+  const members = {};
+  members[myUid] = true; // ผู้สร้างเป็นสมาชิกอัตโนมัติ
+
+  selectedBoxes.forEach(box => {
+    members[box.value] = true;
+  });
+
+  const groupRef = db.ref('customGroups').push();
+  groupRef.set({
+    name: name,
+    ownerUid: myUid,
+    ownerName: myName,
+    createdAt: new Date().toLocaleString('th-TH'),
+    members: members
+  }).then(() => {
+    logActivity(myName, myUid, 'Create Group', `สร้างกลุ่ม: ${name}`);
+    closeModal('createGroupOverlay');
+    showToast(`สร้างกลุ่ม "${name}" เรียบร้อยแล้ว`);
+  });
+}
+
+function openManageGroupModal(){
+  const mode = document.getElementById('chatMode').value;
+  if (!mode.startsWith('custom_')) return;
+  const groupId = mode.replace('custom_', '');
+  const group = customGroupsCache[groupId];
+  if (!group) return;
+
+  document.getElementById('editGroupNameInput').value = group.name;
+  const listArea = document.getElementById('groupMemberListArea');
+  listArea.innerHTML = '';
+
+  if (group.members) {
+    Object.keys(group.members).forEach(memberUid => {
+      const u = allUsersCache[memberUid] || { name: 'Unknown User' };
+      const item = document.createElement('div');
+      item.style = 'display:flex;justify-content:space-between;align-items:center;padding:6px;background:#f8fafc;border-radius:6px;font-size:.85rem;';
+      item.innerHTML = `
+        <span>👤 ${escapeHtml(u.name)} ${memberUid === group.ownerUid ? '<strong style="color:var(--primary);">(ผู้สร้าง)</strong>' : ''}</span>
+        ${(memberUid !== group.ownerUid) ? `<button class="btn btn-sm btn-danger" onclick="kickMemberFromGroup('${groupId}', '${memberUid}')">เตะออก</button>` : ''}
+      `;
+      listArea.appendChild(item);
+    });
+  }
+
+  openModal('manageGroupOverlay');
+}
+
+function saveGroupName(){
+  const mode = document.getElementById('chatMode').value;
+  const groupId = mode.replace('custom_', '');
+  const newName = document.getElementById('editGroupNameInput').value.trim();
+  if (!newName) return alert('กรุณากรอกชื่อกลุ่ม');
+
+  db.ref(`customGroups/${groupId}/name`).set(newName).then(() => {
+    showToast('เปลี่ยนชื่อกลุ่มแล้ว');
+    closeModal('manageGroupOverlay');
+  });
+}
+
+function kickMemberFromGroup(groupId, memberUid){
+  if (confirm('ต้องการเตะสมาชิกท่านนี้ออกจากกลุ่มใช่หรือไม่?')){
+    db.ref(`customGroups/${groupId}/members/${memberUid}`).remove().then(() => {
+      showToast('เตะออกจากกลุ่มแล้ว');
+      openManageGroupModal(); // Reload Modal
+    });
+  }
+}
+
+function deleteCurrentGroup(){
+  const mode = document.getElementById('chatMode').value;
+  const groupId = mode.replace('custom_', '');
+  if (confirm('🚨 คุณต้องการลบ/ยุบกลุ่มนี้ใช่หรือไม่? ข้อความทั้งหมดของกลุ่มจะยังคงอยู่หรือถูกลบ')){
+    db.ref(`customGroups/${groupId}`).remove().then(() => {
+      showToast('ยุบกลุ่มเรียบร้อยแล้ว');
+      closeModal('manageGroupOverlay');
+      document.getElementById('chatMode').value = 'group';
+      handleChatModeChange();
+    });
+  }
+}
+
+// ---------------------------------------------------------
+function handleFileSelect(){
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) return;
+
+  const maxBytes = (systemSettings.maxFileSizeMB || 10) * 1024 * 1024;
+  if (file.size > maxBytes) {
+    alert(`กรุณาเลือกไฟล์ขนาดไม่เกิน ${systemSettings.maxFileSizeMB || 10}MB`);
+    document.getElementById('fileInput').value = '';
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('selectedFileLabel').textContent = '📁 ' + file.name;
+}
+
+async function sendMessage(){
+  if (!systemSettings.allowFileUpload && selectedFile) {
+    alert('⚠️ การแนบไฟล์ถูกปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ');
+    return;
+  }
+
+  const input = document.getElementById('messageInput');
+  const msgText = input.value.trim();
+  const mode = document.getElementById('chatMode').value;
+  const targetUid = document.getElementById('targetUserSelect').value;
+  const sendBtn = document.getElementById('sendBtn');
+
+  if (mode === 'private' && !targetUid) return alert('กรุณาเลือกผู้รับแชทเดี่ยว');
+  if (!msgText && !selectedFile) return;
+
+  sendBtn.disabled = true;
+  let fileData = null;
+
+  try {
+    if (selectedFile) {
+      document.getElementById('selectedFileLabel').textContent = '⏳ กำลังอัปโหลด...';
+      const fileRef = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
+      const snapshot = await fileRef.put(selectedFile);
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      fileData = { name: selectedFile.name, url: downloadURL };
+    }
+
+    await db.ref('messages').push({
+      sender: myName,
+      senderUid: myUid,
+      isAdmin: isAdmin,
+      text: msgText,
+      file: fileData,
+      mode: mode, // group, private, หรือ custom_groupId
+      targetUid: mode === 'private' ? targetUid : null,
+      time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      ts: Date.now()
+    });
+
+    input.value = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('selectedFileLabel').textContent = '';
+    selectedFile = null;
+  } catch (err) {
+    systemDiagnostics.fileUpload.status = 'error';
+    logSystemError('File Upload/Message Failed', err.message);
+    alert('ส่งข้อความไม่สำเร็จ: ' + err.message);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+function renderMessage(key, data, isMine){
   const chatBox = document.getElementById('chatBox');
-  const div = document.createElement('div');
+  const msgDiv = document.createElement('div');
 
   if (data.system) {
-    div.className = 'message system';
-    div.textContent = '📣 ' + data.text;
-    chatBox.appendChild(div);
+    msgDiv.classList.add('message', 'system');
+    msgDiv.textContent = '📣 ' + data.text;
+    chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
     return;
   }
 
-  div.className = 'message ' + (isMine ? 'mine' : 'others');
-  const canDel = isMine || myRole === 'admin';
-  const delBtn = canDel ? `<button class="del-btn" onclick="deleteMessage('${key}')">🗑</button>` : '';
-  const adminTag = data.isAdmin ? '<span class="badge badge-warning" style="font-size:.65rem;">Admin</span>' : '';
+  msgDiv.classList.add('message', isMine ? 'mine' : 'others');
+  let modeBadge = '👥 กลุ่ม';
+  if (data.mode === 'private') modeBadge = '🔒 ส่วนตัว';
+  else if (data.mode.startsWith('custom_')) modeBadge = '👥 กลุ่มย่อย';
 
-  let html = `<div class="meta"><span>${escapeHtml(data.sender)} ${adminTag}</span><span>${escapeHtml(data.time)}${delBtn}</span></div>`;
+  const adminBadge = data.isAdmin ? '<span class="badge-tiny">แอดมิน</span>' : '';
+  const canDelete = isMine || isAdmin;
+  const delBtnHtml = canDelete ? `<button class="del-btn" onclick="deleteMessage('${key}')"><i class="fa-solid fa-trash"></i></button>` : '';
+
+  let html = `<div class="meta"><span>${escapeHtml(data.sender)}${adminBadge} · ${modeBadge}</span><span>${escapeHtml(data.time)}${delBtnHtml}</span></div>`;
   if (data.text) html += `<div>${escapeHtml(data.text)}</div>`;
-  if (data.file) html += `<div style="margin-top:4px;">📁 <a href="${data.file.url}" target="_blank" style="color:inherit;font-weight:700;">${escapeHtml(data.file.name)}</a></div>`;
-
-  div.innerHTML = html;
-  chatBox.appendChild(div);
+  if (data.file) {
+    html += `<div style="margin-top:5px;">📁 <a href="${data.file.url}" download target="_blank">${escapeHtml(data.file.name)}</a></div>`;
+  }
+  msgDiv.innerHTML = html;
+  chatBox.appendChild(msgDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-var selectedFile = null;
-function handleFileSelect() {
-  const f = document.getElementById('fileInput').files[0];
-  if (!f) return;
-  selectedFile = f;
-  document.getElementById('selectedFileLabel').textContent = f.name;
-}
-
-async function sendMessage() {
-  const input = document.getElementById('messageInput');
-  const text = input.value.trim();
-  const mode = document.getElementById('chatMode').value;
-  const targetUid = document.getElementById('targetUserSelect').value;
-
-  if (mode === 'private' && !targetUid) return alert('กรุณาเลือกผู้รับแชทเดี่ยว');
-  if (!text && !selectedFile) return;
-
-  let fileData = null;
-  if (selectedFile) {
-    try {
-      const ref = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
-      await ref.put(selectedFile);
-      const url = await ref.getDownloadURL();
-      fileData = { name: selectedFile.name, url: url };
-    } catch (err) {
-      alert('อัปโหลดไฟล์ไม่สำเร็จ: ' + err.message);
-      logErrorToFirebase('Storage Error', err.message);
-      return;
-    }
-  }
-
-  await db.ref('messages').push({
-    sender: myDisplayName,
-    senderUid: myUid,
-    isAdmin: myRole === 'admin',
-    text: text,
-    file: fileData,
-    mode: mode,
-    targetUid: targetUid || null,
-    time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-    ts: Date.now()
-  });
-
-  input.value = '';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('selectedFileLabel').textContent = '';
-  selectedFile = null;
-}
-
-function deleteMessage(key) {
-  if (confirm('ต้องการลบข้อความนี้ใช่หรือไม่?')) {
-    db.ref('messages/' + key).remove();
+function deleteMessage(key){
+  if (confirm('ต้องการลบข้อความนี้ใช่หรือไม่?')){
+    db.ref('messages/' + key).remove()
+      .then(() => showToast('ลบข้อความแล้ว'))
+      .catch(err => alert('ไม่สามารถลบข้อความได้: ' + err.message));
   }
 }
 
-async function saveMyDisplayName() {
-  const name = document.getElementById('newDisplayNameInput').value.trim();
-  if (!name) return alert('กรุณากรอกชื่อ');
-  await db.ref('users/' + myUid + '/displayName').set(name);
-  logAccountHistory(myUid, myEmail, `เปลี่ยนชื่อแสดงผลเป็น: ${name}`);
-  myDisplayName = name;
-  document.getElementById('myNicknameTag').textContent = name + (myRole === 'admin' ? ' 🛠' : '');
-  closeModal('editProfileOverlay');
-  showToast('แก้ไขชื่อสำเร็จ');
+function clearAllChat(){
+  if (confirm('🚨 เตือน! คุณต้องการล้างข้อความแชททั้งหมดในระบบใช่หรือไม่?')){
+    db.ref('messages').remove()
+      .then(() => {
+        logActivity(myName, myUid, 'Clear Chat', 'ล้างประวัติแชททั้งหมด');
+        showToast('ล้างประวัติแชททั้งหมดเรียบร้อยแล้ว');
+      })
+      .catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+  }
 }
 
-function submitReport() {
+function submitReport(){
   const text = document.getElementById('reportText').value.trim();
-  if (!text) return;
+  if (!text) return alert('กรุณาพิมพ์รายละเอียดปัญหา');
   db.ref('reports').push({
-    sender: myDisplayName,
-    senderUid: myUid,
+    user: myName,
+    uid: myUid,
     text: text,
     status: 'new',
-    time: new Date().toLocaleString('th-TH'),
-    ts: Date.now()
+    ts: Date.now(),
+    time: new Date().toLocaleString('th-TH')
+  }).then(() => {
+    logActivity(myName, myUid, 'Report Bug', text.substring(0, 30));
+    document.getElementById('reportText').value = '';
+    closeModal('reportOverlay');
+    showToast('ส่งรายงานถึงแอดมินเรียบร้อยแล้ว');
   });
-  document.getElementById('reportText').value = '';
-  closeModal('reportOverlay');
-  showToast('ส่งรายงานบั๊กเรียบร้อยแล้ว');
 }
 
-/* ==================== ADMIN CONTROL PANEL UI & NAVIGATION ==================== */
-function switchToAdminUI() {
-  if (myRole !== 'admin') return alert('คุณไม่มีสิทธิ์เข้าถึงหน้า Admin');
-  document.getElementById('chatViewSection').style.display = 'none';
-  document.getElementById('adminViewSection').style.display = 'flex';
+function openEditProfile(){
+  if (!systemSettings.allowNameChange && !isAdmin) {
+    return alert('⚠️ ผู้ดูแลระบบปิดการเปลี่ยนชื่อชั่วคราว');
+  }
+  document.getElementById('profileUidText').textContent = myUid;
+  document.getElementById('profileEmailText').textContent = myEmail;
+  document.getElementById('newDisplayNameInput').value = myName;
+  openModal('editProfileOverlay');
 }
 
-function switchToChatUI() {
-  document.getElementById('adminViewSection').style.display = 'none';
-  document.getElementById('chatViewSection').style.display = 'flex';
+async function saveMyDisplayName(){
+  const newName = document.getElementById('newDisplayNameInput').value.trim();
+  if (!newName) return alert('กรุณาระบุชื่อผู้ใช้');
+  if (newName === myName) return closeModal('editProfileOverlay');
+
+  const oldName = myName;
+  myName = newName;
+  document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+
+  await db.ref(`users/${myUid}/name`).set(newName);
+
+  const historyRef = db.ref(`userHistory/${myUid}/nameHistory`).push();
+  await historyRef.set({
+    from: oldName,
+    to: newName,
+    time: new Date().toLocaleString('th-TH')
+  });
+
+  logActivity(myName, myUid, 'Name Change', `${oldName} -> ${newName}`);
+  closeModal('editProfileOverlay');
+  showToast('เปลี่ยนชื่อสำเร็จ');
 }
 
-function switchAdminPage(pageId) {
-  document.querySelectorAll('.admin-menu li').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+function renderUserShortcuts(shortcuts){
+  const container = document.getElementById('shortcutsBarContainer');
+  container.innerHTML = '';
+  const activeKeys = Object.keys(shortcuts).filter(k => shortcuts[k].enabled);
 
-  event.currentTarget.classList.add('active');
-  document.getElementById('page-' + pageId).classList.add('active');
+  if (activeKeys.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
 
-  const titles = {
-    dash: '📊 Dashboard ภาพรวมระบบ',
-    users: '👥 User Management จัดการผู้ใช้',
-    history: '📜 Account History ประวัติบัญชี',
-    bugs: '🐞 Bug Reports รายการแจ้งบั๊ก',
-    errors: '⚠️ Error Monitor ดักจับข้อผิดพลาด',
-    scripts: '🧩 Script Diagnostics สถานะโมดูล',
-    shortcuts: '🔗 Link Shortcuts จัดการปุ่มลัด',
-    settings: '⚙️ System Settings ตั้งค่าระบบ'
-  };
-  document.getElementById('adminPageTitle').textContent = titles[pageId] || 'Admin Panel';
+  container.style.display = 'flex';
+  activeKeys.forEach(k => {
+    const item = shortcuts[k];
+    const chip = document.createElement('a');
+    chip.className = 'shortcut-chip';
+    chip.href = item.url;
+    chip.target = '_blank';
+    chip.innerHTML = `${item.icon || '🔗'} ${escapeHtml(item.name)}`;
+    container.appendChild(chip);
+  });
 }
 
-/* ==================== ADMIN DATA RENDERING & ACTIONS ==================== */
-function renderUsersTable() {
-  const tbody = document.getElementById('userManagementTable');
+// ---------------------------------------------------------
+// FULL ADMIN CONTROL CENTER IMPLEMENTATION
+// ---------------------------------------------------------
+function openFullAdminCenter(){
+  document.getElementById('adminContainer').style.display = 'flex';
+  document.getElementById('adminUserDisplayName').textContent = `${myName} (${myUid.substring(0, 6)}...)`;
+  switchAdminTab('dashboard');
+}
+
+function closeAdminCenter(){
+  document.getElementById('adminContainer').style.display = 'none';
+}
+
+function toggleSidebar(){
+  document.getElementById('adminSidebar').classList.toggle('open');
+}
+
+function switchAdminTab(tab, element){
+  currentAdminTab = tab;
+  if (element) {
+    document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+  }
+  
+  if (window.innerWidth <= 768) {
+    document.getElementById('adminSidebar').classList.remove('open');
+  }
+
+  const titleEl = document.getElementById('adminSectionTitle');
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = '';
+
+  switch (tab) {
+    case 'dashboard':
+      titleEl.innerHTML = '<i class="fa-solid fa-chart-pie"></i> Admin Dashboard';
+      renderAdminDashboard();
+      break;
+    case 'users':
+      titleEl.innerHTML = '<i class="fa-solid fa-users"></i> User Management';
+      renderAdminUsersSection();
+      break;
+    case 'bans':
+      titleEl.innerHTML = '<i class="fa-solid fa-ban"></i> Banned Accounts';
+      renderAdminBansSection();
+      break;
+    case 'chat':
+      titleEl.innerHTML = '<i class="fa-solid fa-comments"></i> Chat Management';
+      renderAdminChatSection();
+      break;
+    case 'announce':
+      titleEl.innerHTML = '<i class="fa-solid fa-bullhorn"></i> Announcement';
+      renderAdminAnnounceSection();
+      break;
+    case 'reports':
+      titleEl.innerHTML = '<i class="fa-solid fa-bug"></i> Bug Reports';
+      renderAdminReportsSection();
+      break;
+    case 'errors':
+      titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error Monitor';
+      renderAdminErrorsSection();
+      break;
+    case 'diagnostics':
+      titleEl.innerHTML = '<i class="fa-solid fa-puzzle-piece"></i> Script Diagnostics';
+      renderAdminDiagnosticsSection();
+      break;
+    case 'shortcuts':
+      titleEl.innerHTML = '<i class="fa-solid fa-link"></i> Shortcut Management';
+      renderAdminShortcutsSection();
+      break;
+    case 'appearance':
+      titleEl.innerHTML = '<i class="fa-solid fa-palette"></i> Appearance & Theme';
+      renderAdminAppearanceSection();
+      break;
+    case 'settings':
+      titleEl.innerHTML = '<i class="fa-solid fa-gear"></i> System Settings';
+      renderAdminSettingsSection();
+      break;
+    case 'activity':
+      titleEl.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Activity Logs';
+      renderAdminActivitySection();
+      break;
+  }
+}
+
+// 1. Dashboard
+async function renderAdminDashboard(){
+  const area = document.getElementById('adminContentArea');
+  
+  const bansSnap = await db.ref('bans').once('value');
+  const bansCount = bansSnap.numChildren();
+  
+  const errSnap = await db.ref('errors').once('value');
+  const errCount = errSnap.numChildren();
+
+  const openReportsCount = Object.values(reportsCache).filter(r => r.status !== 'resolved').length;
+
+  area.innerHTML = `
+    <div class="grid-stats">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#e0e7ff;color:#4338ca;"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info"><div class="num">${Object.keys(allUsersCache).length}</div><div class="label">ผู้ใช้ทั้งหมด</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#dcfce7;color:#15803d;"><i class="fa-solid fa-circle-dot"></i></div>
+        <div class="stat-info"><div class="num">${Object.keys(onlineUsersCache).length}</div><div class="label">ออนไลน์ตอนนี้</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-ban"></i></div>
+        <div class="stat-info"><div class="num">${bansCount}</div><div class="label">ผู้ถูกแบน</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef3c7;color:#b45309;"><i class="fa-solid fa-bug"></i></div>
+        <div class="stat-info"><div class="num">${openReportsCount}</div><div class="label">รายงานใหม่</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ffedd5;color:#c2410c;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-info"><div class="num">${errCount}</div><div class="label">Errors ที่เกิดขึ้น</div></div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
+      </div>
+      <div id="dashboardActivityLog">กำลังโหลด...</div>
+    </div>
+  `;
+
+  db.ref('activities').limitToLast(6).once('value', snap => {
+    const container = document.getElementById('dashboardActivityLog');
+    if (!snap.exists()) { container.innerHTML = '<p style="color:#888;">ไม่มีกิจกรรมล่าสุด</p>'; return; }
+    let html = '<ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">';
+    const logs = [];
+    snap.forEach(child => { logs.unshift(child.val()); });
+    logs.forEach(l => {
+      html += `<li style="font-size:.85rem;padding-bottom:8px;border-bottom:1px dashed #e2e8f0;">
+        <span style="color:#64748b;font-weight:600;">[${escapeHtml(l.time)}]</span> 
+        <strong>${escapeHtml(l.actor)}</strong>: ${escapeHtml(l.action)} - <span style="color:#475569;">${escapeHtml(l.details)}</span>
+      </li>`;
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+  });
+}
+
+// 2. User Management
+function renderAdminUsersSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="search-box">
+        <input type="text" id="userSearchInput" placeholder="🔍 ค้นหาด้วย ชื่อ, UID หรือ Email..." oninput="filterUserTable()">
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ผู้ใช้งาน</th>
+              <th>UID</th>
+              <th>Email</th>
+              <th>สถานะ</th>
+              <th>สิทธิ์</th>
+              <th>วันที่สมัคร</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  filterUserTable();
+}
+
+function filterUserTable(){
+  const query = (document.getElementById('userSearchInput')?.value || '').toLowerCase();
+  const tbody = document.getElementById('userTableBody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  const search = (document.getElementById('userSearchInput')?.value || '').toLowerCase();
 
-  Object.values(usersCache).forEach(u => {
-    if (search && !u.displayName.toLowerCase().includes(search) && !u.uid.toLowerCase().includes(search) && !u.email.toLowerCase().includes(search)) return;
+  Object.values(allUsersCache).forEach(u => {
+    const nameMatch = (u.name || '').toLowerCase().includes(query);
+    const uidMatch = (u.uid || '').toLowerCase().includes(query);
+    const emailMatch = (u.email || '').toLowerCase().includes(query);
 
+    if (nameMatch || uidMatch || emailMatch) {
+      const tr = document.createElement('tr');
+      const isOnline = u.online;
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(u.name)}</strong></td>
+        <td><code style="font-size:.78rem;">${escapeHtml(u.uid)}</code></td>
+        <td>${escapeHtml(u.email || 'ไม่มีข้อมูล')}</td>
+        <td><span class="status-tag ${isOnline ? 'status-online' : 'status-offline'}">${isOnline ? '🟢 Online' : '⚪ Offline'}</span></td>
+        <td>${u.admin ? '🛠 Admin' : 'ผู้ใช้ทั่วไป'}</td>
+        <td>${escapeHtml(u.createdAt || '-')}</td>
+        <td>
+          <div class="row" style="gap:4px;">
+            <button class="btn btn-sm" onclick="viewUserHistory('${u.uid}')">ดูประวัติ</button>
+            ${u.uid !== myUid ? `<button class="btn btn-sm btn-secondary" onclick="kickUser('${u.uid}')">เตะ</button>` : ''}
+            ${u.uid !== myUid ? `<button class="btn btn-sm btn-danger" onclick="banUserPrompt('${u.uid}')">แบน</button>` : ''}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  });
+}
+
+function kickUser(uid){
+  if (confirm('คุณต้องการเตะผู้ใช้คนนี้ออกจากระบบใช่หรือไม่?')){
+    db.ref('users/' + uid).remove().then(() => {
+      logActivity(myName, myUid, 'Kick User', `เตะ UID: ${uid}`);
+      showToast('เตะผู้ใช้เรียบร้อยแล้ว');
+    });
+  }
+}
+
+function banUserPrompt(uid){
+  const reason = prompt('ระบุเหตุผลในการแบน:');
+  if (reason !== null) {
+    db.ref('bans/' + uid).set({
+      bannedAt: new Date().toLocaleString('th-TH'),
+      reason: reason || 'ไม่ระบุเหตุผล',
+      bannedBy: myName
+    }).then(() => {
+      db.ref('users/' + uid).remove();
+      logActivity(myName, myUid, 'Ban User', `แบน UID: ${uid} (เหตุผล: ${reason})`);
+      showToast('แบนผู้ใช้เรียบร้อยแล้ว');
+      if (currentAdminTab === 'bans') renderAdminBansSection();
+    });
+  }
+}
+
+// 3. Bans Management
+async function renderAdminBansSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = '<div class="admin-card"><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>UID</th><th>เหตุผล</th><th>ผู้แบน</th><th>วันที่แบน</th><th>การกระทำ</th></tr></thead><tbody id="banTableBody"></tbody></table></div></div>';
+  
+  const snap = await db.ref('bans').once('value');
+  const tbody = document.getElementById('banTableBody');
+  if (!snap.exists()) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ไม่มีรายชื่อผู้ถูกแบน</td></tr>';
+    return;
+  }
+
+  snap.forEach(child => {
+    const uid = child.key;
+    const b = child.val();
     const tr = document.createElement('tr');
-    const isOnline = u.status === 'online';
-    const statusBadge = isOnline ? '<span class="badge badge-success">🟢 ออนไลน์</span>' : '<span class="badge badge-danger">⚪️ ออฟไลน์</span>';
-    const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('th-TH') : '-';
-
     tr.innerHTML = `
-      <td><b>${escapeHtml(u.displayName)}</b> ${u.role === 'admin' ? '<span class="badge badge-warning">Admin</span>' : ''}</td>
-      <td style="font-family:monospace;font-size:.78rem;">${u.uid}</td>
-      <td>${escapeHtml(u.email)}</td>
-      <td>${statusBadge}</td>
-      <td>${dateStr}</td>
-      <td>
-        <button class="btn btn-outline" style="padding:2px 6px;font-size:.72rem;" onclick="adminEditUserName('${u.uid}', '${escapeHtml(u.displayName)}')">แก้ชื่อ</button>
-        <button class="btn btn-warning" style="padding:2px 6px;font-size:.72rem;" onclick="kickUser('${u.uid}')">เตะ</button>
-        <button class="btn btn-danger" style="padding:2px 6px;font-size:.72rem;" onclick="banUserUID('${u.uid}')">แบน UID</button>
-        <button class="btn btn-danger" style="padding:2px 6px;font-size:.72rem;" onclick="banUserEmail('${u.email}')">แบน Email</button>
-        <button class="btn btn-success" style="padding:2px 6px;font-size:.72rem;" onclick="unbanUser('${u.uid}', '${u.email}')">ปลดแบน</button>
-      </td>
+      <td><code>${escapeHtml(uid)}</code></td>
+      <td>${escapeHtml(b.reason)}</td>
+      <td>${escapeHtml(b.bannedBy || 'Admin')}</td>
+      <td>${escapeHtml(b.bannedAt || '-')}</td>
+      <td><button class="btn btn-sm" style="background:#2fa86a;" onclick="unbanUser('${uid}')">ปลดแบน</button></td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-async function adminEditUserName(uid, oldName) {
-  const newName = prompt('แก้ไขชื่อผู้ใช้:', oldName);
-  if (newName && newName !== oldName) {
-    await db.ref('users/' + uid + '/displayName').set(newName);
-    logActivity('Admin', `แก้ไขชื่อผู้ใช้ ${oldName} เป็น ${newName}`);
-    logAccountHistory(uid, usersCache[uid]?.email, `Admin เปลี่ยนชื่อเป็น: ${newName}`);
+function unbanUser(uid){
+  if (confirm('ต้องการปลดแบนบัญชีนี้หรือไม่?')){
+    db.ref('bans/' + uid).remove().then(() => {
+      logActivity(myName, myUid, 'Unban User', `ปลดแบน UID: ${uid}`);
+      showToast('ปลดแบนเรียบร้อยแล้ว');
+      renderAdminBansSection();
+    });
   }
 }
 
-async function kickUser(uid) {
-  if (confirm('ต้องการเตะผู้ใช้นี้ออกจากระบบหรือไม่?')) {
-    await db.ref('users/' + uid + '/status').set('offline');
-    logActivity('Admin', `เตะผู้ใช้ UID: ${uid} ออกจากระบบ`);
-    showToast('เตะผู้ใช้เรียบร้อยแล้ว');
+// 4. View User History
+async function viewUserHistory(uid){
+  const user = allUsersCache[uid] || { name: 'Unknown', uid: uid, email: 'ไม่มีข้อมูล' };
+  const historySnap = await db.ref(`userHistory/${uid}`).once('value');
+  const hData = historySnap.val() || {};
+
+  let html = `
+    <div><strong>ชื่อปัจจุบัน:</strong> ${escapeHtml(user.name)}</div>
+    <div><strong>UID:</strong> <code>${escapeHtml(user.uid)}</code></div>
+    <div><strong>Email ที่ใช้ Login:</strong> ${escapeHtml(user.email || 'ไม่มีข้อมูล')}</div>
+    <div><strong>วันที่สมัคร:</strong> ${escapeHtml(user.createdAt || '-')}</div>
+    <hr style="margin:8px 0;border-color:#e2e8f0;">
+    <div style="font-weight:700;">📜 ประวัติการเปลี่ยนชื่อ:</div>
+  `;
+
+  if (hData.nameHistory) {
+    html += '<ul style="padding-left:18px;">';
+    Object.values(hData.nameHistory).forEach(nh => {
+      html += `<li>${escapeHtml(nh.from)} → <strong>${escapeHtml(nh.to)}</strong> <span style="font-size:.72rem;color:#777;">(${escapeHtml(nh.time)})</span></li>`;
+    });
+    html += '</ul>';
+  } else {
+    html += '<div style="color:#888;">ไม่มีประวัติการเปลี่ยนชื่อ</div>';
   }
-}
 
-async function banUserUID(uid) {
-  const reason = prompt('ใส่เหตุผลในการแบน UID:');
-  if (reason) {
-    await db.ref('bannedUsers/' + uid).set({ reason: reason, ts: Date.now() });
-    await db.ref('users/' + uid + '/status').set('offline');
-    logActivity('Admin', `แบน UID: ${uid} (เหตุผล: ${reason})`);
-    showToast('แบน UID เรียบร้อยแล้ว');
+  html += `<hr style="margin:8px 0;border-color:#e2e8f0;"><div style="font-weight:700;">📜 ประวัติการ Login ล่าสุด:</div>`;
+  if (hData.loginHistory) {
+    html += '<ul style="padding-left:18px;">';
+    Object.values(hData.loginHistory).slice(-5).forEach(lh => {
+      html += `<li>${escapeHtml(lh)}</li>`;
+    });
+    html += '</ul>';
+  } else {
+    html += '<div style="color:#888;">ไม่มีประวัติการ Login</div>';
   }
+
+  document.getElementById('userHistoryContent').innerHTML = html;
+  openModal('userHistoryOverlay');
 }
 
-async function banUserEmail(email) {
-  const reason = prompt('ใส่เหตุผลในการแบน Email:');
-  if (reason) {
-    const key = email.replace(/\./g, '_');
-    await db.ref('bannedEmails/' + key).set({ email: email, reason: reason, ts: Date.now() });
-    logActivity('Admin', `แบน Email: ${email}`);
-    showToast('แบน Email เรียบร้อยแล้ว');
+// 5. Chat Management
+function renderAdminChatSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-title" style="margin-bottom:12px;">🚨 ล้างประวัติแชททั้งหมด</div>
+      <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">การล้างแชทจะลบข้อความแชทกลุ่มและแชทเดี่ยวทั้งหมดใน Realtime Database</p>
+      <button class="btn btn-danger" onclick="clearAllChat()"><i class="fa-solid fa-trash-can"></i> ล้างประวัติแชททั้งหมดในระบบ</button>
+    </div>
+  `;
+}
+
+// 6. Announcements
+function renderAdminAnnounceSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-title" style="margin-bottom:12px;">📢 จัดการประกาศปักหมุด</div>
+      <div class="row" style="margin-bottom:12px;">
+        <input type="text" id="adminAnnounceInput" placeholder="พิมพ์ข้อความประกาศ..." style="flex:1;padding:9px;border:1px solid #cbd5e1;border-radius:8px;">
+        <button class="btn" onclick="saveAnnouncementFromAdmin()">บันทึกประกาศ</button>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="clearAnnouncement()">ลบประกาศปักหมุด</button>
+    </div>
+  `;
+}
+
+function saveAnnouncementFromAdmin(){
+  const text = document.getElementById('adminAnnounceInput').value.trim();
+  if (!text) return;
+  db.ref('settings/banner').set(text).then(() => {
+    logActivity(myName, myUid, 'Announcement Update', text);
+    showToast('บันทึกประกาศปักหมุดแล้ว');
+  });
+}
+
+function clearAnnouncement(){
+  db.ref('settings/banner').remove().then(() => showToast('ลบประกาศปักหมุดแล้ว'));
+}
+
+// 7. Bug Reports
+function renderAdminReportsSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = '<div class="admin-card"><div id="adminReportCards" style="display:flex;flex-direction:column;gap:10px;"></div></div>';
+  const container = document.getElementById('adminReportCards');
+  
+  if (Object.keys(reportsCache).length === 0) {
+    container.innerHTML = '<p style="color:#888;">ไม่มีรายงานปัญหา</p>';
+    return;
   }
-}
-
-async function unbanUser(uid, email) {
-  await db.ref('bannedUsers/' + uid).remove();
-  if (email) await db.ref('bannedEmails/' + email.replace(/\./g, '_')).remove();
-  logActivity('Admin', `ปลดแบนผู้ใช้ UID: ${uid} / Email: ${email}`);
-  showToast('ปลดแบนเรียบร้อยแล้ว');
-}
-
-function renderBugReportsTable() {
-  const tbody = document.getElementById('bugReportsTable');
-  tbody.innerHTML = '';
-  let openCount = 0;
 
   Object.keys(reportsCache).forEach(key => {
     const r = reportsCache[key];
-    if (r.status === 'new') openCount++;
+    const card = document.createElement('div');
+    card.style = 'background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;color:#64748b;margin-bottom:6px;">
+        <span>👤 <strong>${escapeHtml(r.user)}</strong> (UID: ${escapeHtml(r.uid)})</span>
+        <span>${escapeHtml(r.time || '')}</span>
+      </div>
+      <div style="font-size:.9rem;color:#1e293b;margin-bottom:10px;">${escapeHtml(r.text)}</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="status-tag ${r.status === 'resolved' ? 'status-online' : 'status-banned'}">${r.status === 'resolved' ? '✅ แก้ไขแล้ว' : '🔴 ใหม่'}</span>
+        ${r.status !== 'resolved' ? `<button class="btn btn-sm" style="background:#2fa86a;" onclick="updateReportStatus('${key}', 'resolved')">ทำเครื่องหมายว่าแก้แล้ว</button>` : ''}
+        <button class="btn btn-sm btn-danger" onclick="deleteReport('${key}')">ลบ</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
 
+function updateReportStatus(key, status){
+  db.ref(`reports/${key}/status`).set(status).then(() => showToast('อัปเดตสถานะแล้ว'));
+}
+
+function deleteReport(key){
+  db.ref(`reports/${key}`).remove().then(() => showToast('ลบรายงานแล้ว'));
+}
+
+// 8. Error Monitor
+function renderAdminErrorsSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = '<div class="admin-card"><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>เวลา</th><th>ประเภท</th><th>ข้อความ Error</th><th>UID/ผู้ใช้</th></tr></thead><tbody id="errorTableBody"></tbody></table></div></div>';
+  
+  db.ref('errors').limitToLast(20).once('value', snap => {
+    const tbody = document.getElementById('errorTableBody');
+    if (!snap.exists()) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">ไม่มีบันทึก Error ในระบบ</td></tr>';
+      return;
+    }
+    const errs = [];
+    snap.forEach(c => { errs.unshift(c.val()); });
+    errs.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(e.time)}</td>
+        <td><strong style="color:var(--danger);">${escapeHtml(e.type)}</strong></td>
+        <td><code>${escapeHtml(e.message)}</code></td>
+        <td>${escapeHtml(e.user)} (${escapeHtml(e.uid)})</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// 9. Script Diagnostics
+function renderAdminDiagnosticsSection(){
+  const area = document.getElementById('adminContentArea');
+  let html = '<div class="admin-card"><div class="admin-card-title" style="margin-bottom:14px;">🧩 SCRIPT DIAGNOSTICS</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">';
+
+  Object.keys(systemDiagnostics).forEach(k => {
+    const item = systemDiagnostics[k];
+    const isOk = item.status === 'ok';
+    html += `
+      <div style="background:#f8fafc;padding:14px;border-radius:10px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:.9rem;">${escapeHtml(item.name)}</div>
+          <div style="font-size:.78rem;color:#64748b;">${escapeHtml(item.msg)}</div>
+        </div>
+        <span class="status-tag ${isOk ? 'status-online' : 'status-banned'}">${isOk ? '🟢 Working' : '🔴 Error'}</span>
+      </div>
+    `;
+  });
+
+  html += '</div></div>';
+  area.innerHTML = html;
+}
+
+// 10. Shortcut Management
+function renderAdminShortcutsSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">🔗 จัดการเมนูลัด (Shortcuts)</div>
+        <button class="btn btn-sm" onclick="openAddShortcutPrompt()">+ เพิ่ม Shortcut</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>ไอคอน</th><th>ชื่อ</th><th>URL</th><th>สถานะ</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody id="shortcutsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('shortcutsTableBody');
+  if (Object.keys(shortcutsCache).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ยังไม่มี Shortcut</td></tr>';
+    return;
+  }
+
+  Object.keys(shortcutsCache).forEach(key => {
+    const s = shortcutsCache[key];
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${r.time}</td>
-      <td>${escapeHtml(r.sender)}</td>
-      <td>${escapeHtml(r.text)}</td>
-      <td><span class="badge ${r.status === 'new' ? 'badge-danger' : 'badge-success'}">${r.status}</span></td>
+      <td>${s.icon || '🔗'}</td>
+      <td><strong>${escapeHtml(s.name)}</strong></td>
+      <td><a href="${escapeHtml(s.url)}" target="_blank" style="color:var(--primary);">${escapeHtml(s.url)}</a></td>
+      <td><span class="status-tag ${s.enabled ? 'status-online' : 'status-offline'}">${s.enabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}</span></td>
       <td>
-        <button class="btn btn-success" style="padding:2px 6px;font-size:.72rem;" onclick="updateBugStatus('${key}', 'resolved')">แก้ไขแล้ว</button>
-        <button class="btn btn-outline" style="padding:2px 6px;font-size:.72rem;" onclick="deleteBugReport('${key}')">ลบ</button>
+        <div class="row" style="gap:4px;">
+          <button class="btn btn-sm btn-secondary" onclick="toggleShortcutEnabled('${key}', ${!s.enabled})">${s.enabled ? 'ปิด' : 'เปิด'}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteShortcut('${key}')">ลบ</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
-
-  document.getElementById('statNewBugs').textContent = openCount;
-  const badge = document.getElementById('adminBugBadge');
-  if (openCount > 0) { badge.style.display = 'inline-block'; badge.textContent = openCount; }
-  else { badge.style.display = 'none'; }
 }
 
-function updateBugStatus(key, status) { db.ref('reports/' + key + '/status').set(status); }
-function deleteBugReport(key) { db.ref('reports/' + key).remove(); }
+function openAddShortcutPrompt(){
+  const name = prompt('ชื่อ Shortcut (เช่น YouTube):');
+  if (!name) return;
+  const url = prompt('URL ลิงก์ (เช่น https://youtube.com):');
+  if (!url) return;
+  const icon = prompt('ไอคอน หรือ Emoji (เช่น 🔴 หรือ <i class="fa-brands fa-youtube"></i>):', '🔗');
 
-function renderErrorLogsTable(errors) {
-  const tbody = document.getElementById('errorMonitorTable');
-  tbody.innerHTML = '';
-  const keys = Object.keys(errors);
-  document.getElementById('statTotalErrors').textContent = keys.length;
-
-  keys.reverse().forEach(key => {
-    const e = errors[key];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${e.time}</td>
-      <td style="font-size:.78rem;">${e.user} (${e.uid})</td>
-      <td><span class="badge badge-danger">${escapeHtml(e.type)}</span></td>
-      <td style="font-family:monospace;font-size:.78rem;">${escapeHtml(e.msg)}</td>
-    `;
-    tbody.appendChild(tr);
+  db.ref('shortcuts').push({
+    name: name,
+    url: url,
+    icon: icon || '🔗',
+    enabled: true
+  }).then(() => {
+    logActivity(myName, myUid, 'Add Shortcut', name);
+    showToast('เพิ่ม Shortcut เรียบร้อย');
   });
 }
 
-function clearErrorLogs() { db.ref('errors').remove(); }
+function toggleShortcutEnabled(key, state){
+  db.ref(`shortcuts/${key}/enabled`).set(state);
+}
 
-function logErrorToFirebase(type, msg) {
-  if (!db) return;
-  db.ref('errors').push({
-    type: type,
-    msg: msg,
-    uid: myUid || 'Guest',
-    user: myDisplayName || 'Unknown',
-    time: new Date().toLocaleTimeString('th-TH'),
-    ts: Date.now()
+function deleteShortcut(key){
+  if (confirm('ลบ Shortcut นี้?')) db.ref(`shortcuts/${key}`).remove();
+}
+
+// 11. Appearance
+function renderAdminAppearanceSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-title" style="margin-bottom:12px;">🎨 ปรับแต่งธีมและชื่อระบบ</div>
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
+        <div>
+          <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:4px;">ชื่อห้องแชท</label>
+          <input type="text" id="adminSettingTitle" placeholder="Classroom Cloud Chat" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;">
+        </div>
+        <div>
+          <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:4px;">สีหลักของธีม</label>
+          <input type="color" id="adminSettingColor" value="#4b6ef5" style="height:40px;width:100%;border:none;cursor:pointer;">
+        </div>
+        <button class="btn" onclick="saveAdminAppearance()">💾 บันทึกธีม</button>
+      </div>
+    </div>
+  `;
+
+  db.ref('settings').once('value').then(snap => {
+    const s = snap.val() || {};
+    if (s.title) document.getElementById('adminSettingTitle').value = s.title;
+    if (s.color) document.getElementById('adminSettingColor').value = s.color;
   });
 }
 
-function logActivity(user, act) {
-  db.ref('activityLogs').push({
-    user: user,
-    action: act,
-    time: new Date().toLocaleTimeString('th-TH'),
-    ts: Date.now()
+function saveAdminAppearance(){
+  const title = document.getElementById('adminSettingTitle').value.trim();
+  const color = document.getElementById('adminSettingColor').value;
+  db.ref('settings/title').set(title);
+  db.ref('settings/color').set(color).then(() => {
+    logActivity(myName, myUid, 'Theme Update', `Title: ${title}, Color: ${color}`);
+    showToast('บันทึกการตั้งค่าธีมเรียบร้อยแล้ว');
   });
 }
 
-function logAccountHistory(uid, email, detail) {
-  db.ref('accountHistory').push({
-    uid: uid,
-    email: email || '-',
-    detail: detail,
-    time: new Date().toLocaleString('th-TH'),
-    ts: Date.now()
+// 12. System Settings (ทำให้ใช้ได้จริง)
+function renderAdminSettingsSection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-title" style="margin-bottom:16px;"><i class="fa-solid fa-sliders"></i> SYSTEM SETTINGS (ตั้งค่าระบบจริง)</div>
+      <div style="display:flex;flex-direction:column;gap:16px;max-width:500px;">
+        
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div>
+            <div style="font-weight:700;font-size:.9rem;">อนุญาตให้ผู้ใช้เปลี่ยนชื่อตนเอง</div>
+            <div style="font-size:.78rem;color:#64748b;">เปิด/ปิด การกดเปลี่ยนชื่อที่แท็กผู้ใช้</div>
+          </div>
+          <input type="checkbox" id="sysAllowNameChange" ${systemSettings.allowNameChange ? 'checked' : ''} style="width:20px;height:20px;">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div>
+            <div style="font-weight:700;font-size:.9rem;">อนุญาตให้ส่ง/อัปโหลดไฟล์</div>
+            <div style="font-size:.78rem;color:#64748b;">เปิด/ปิด ปุ่มแนบไฟล์ 📎 ในห้องแชท</div>
+          </div>
+          <input type="checkbox" id="sysAllowFileUpload" ${systemSettings.allowFileUpload ? 'checked' : ''} style="width:20px;height:20px;">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div>
+            <div style="font-weight:700;font-size:.9rem;color:var(--danger);">ปิดปรับปรุงระบบชั่วคราว (Maintenance Mode)</div>
+            <div style="font-size:.78rem;color:#64748b;">เมื่อเปิดอยู่ สมาชิกทั่วไปจะไม่สามารถเข้าใช้งานได้</div>
+          </div>
+          <input type="checkbox" id="sysMaintenanceMode" ${systemSettings.maintenanceMode ? 'checked' : ''} style="width:20px;height:20px;">
+        </div>
+
+        <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <label style="font-weight:700;font-size:.9rem;display:block;margin-bottom:4px;">ขนาดไฟล์สูงสุดที่อนุญาต (MB)</label>
+          <input type="number" id="sysMaxFileSizeMB" value="${systemSettings.maxFileSizeMB || 10}" min="1" max="50" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
+        </div>
+
+        <button class="btn" onclick="saveSystemSettingsConfig()"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าระบบ</button>
+      </div>
+    </div>
+  `;
+}
+
+function saveSystemSettingsConfig(){
+  const allowNameChange = document.getElementById('sysAllowNameChange').checked;
+  const allowFileUpload = document.getElementById('sysAllowFileUpload').checked;
+  const maintenanceMode = document.getElementById('sysMaintenanceMode').checked;
+  const maxFileSizeMB = parseInt(document.getElementById('sysMaxFileSizeMB').value) || 10;
+
+  const newSys = {
+    allowNameChange: allowNameChange,
+    allowFileUpload: allowFileUpload,
+    maintenanceMode: maintenanceMode,
+    maxFileSizeMB: maxFileSizeMB
+  };
+
+  db.ref('settings/system').set(newSys).then(() => {
+    logActivity(myName, myUid, 'Update System Settings', JSON.stringify(newSys));
+    showToast('บันทึก System Settings เรียบร้อยแล้ว');
   });
 }
 
-function renderActivityLogsTable(logs) {
-  const tbody = document.getElementById('dashActivityLogsTable');
-  tbody.innerHTML = '';
-  Object.values(logs).reverse().forEach(l => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${l.time}</td><td><b>${escapeHtml(l.user)}</b></td><td>${escapeHtml(l.action)}</td>`;
-    tbody.appendChild(tr);
+// 13. Activity Logs
+function renderAdminActivitySection(){
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-title" style="margin-bottom:12px;">📜 ACTIVITY LOGS</div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>เวลา</th><th>ผู้กระทำ</th><th>การกระทำ</th><th>รายละเอียด</th></tr>
+          </thead>
+          <tbody id="activityTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  db.ref('activities').limitToLast(30).once('value', snap => {
+    const tbody = document.getElementById('activityTableBody');
+    if (!snap.exists()) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">ไม่มีบันทึกกิจกรรม</td></tr>';
+      return;
+    }
+    const logs = [];
+    snap.forEach(c => { logs.unshift(c.val()); });
+    logs.forEach(l => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(l.time)}</td>
+        <td><strong>${escapeHtml(l.actor)}</strong></td>
+        <td><span class="status-tag status-online">${escapeHtml(l.action)}</span></td>
+        <td>${escapeHtml(l.details)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   });
 }
 
-function renderAccountHistoryTable(logs) {
-  const tbody = document.getElementById('accountHistoryTable');
-  tbody.innerHTML = '';
-  Object.values(logs).reverse().forEach(l => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${l.time}</td><td style="font-family:monospace;font-size:.78rem;">${l.uid}</td><td>${escapeHtml(l.email)}</td><td>${escapeHtml(l.detail)}</td>`;
-    tbody.appendChild(tr);
-  });
+function updateReportBadge(count){
+  const badge = document.getElementById('reportBadge');
+  if (!badge) return;
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+  badge.textContent = count;
 }
 
-function updateDashboardStats() {
-  const users = Object.values(usersCache);
-  document.getElementById('statTotalUsers').textContent = users.length;
-  document.getElementById('statOnlineUsers').textContent = users.filter(u => u.status === 'online').length;
-  
-  db.ref('bannedUsers').once('value').then(snap => {
-    document.getElementById('statBannedUsers').textContent = snap.numChildren();
-  });
-}
-
-function runDiagnostics() {
-  showToast('🔍 สแกนระบบสำเร็จ: ทุกโมดูลทำงานปกติ');
-}
-
-/* ==================== SHORTCUTS MANAGER ==================== */
-function addShortcutLink() {
-  const title = document.getElementById('shortTitle').value.trim();
-  const url = document.getElementById('shortUrl').value.trim();
-  const icon = document.getElementById('shortIcon').value.trim() || '🔗';
-
-  if (!title || !url) return alert('กรุณากรอกชื่อและ URL');
-
-  db.ref('shortcuts').push({ title, url, icon }).then(() => {
-    document.getElementById('shortTitle').value = '';
-    document.getElementById('shortUrl').value = '';
-    document.getElementById('shortIcon').value = '';
-    showToast('เพิ่ม ShortLink เรียบร้อย');
-  });
-}
-
-function deleteShortcut(key) { db.ref('shortcuts/' + key).remove(); }
-
-function renderShortcutsUI() {
-  // Render ในหน้า Chat View
-  const bar = document.getElementById('userShortcutsBar');
-  bar.innerHTML = '';
-
-  // Render ในหน้า Admin Table
-  const tbody = document.getElementById('adminShortcutsTable');
-  tbody.innerHTML = '';
-
-  Object.keys(shortcutsCache).forEach(key => {
-    const s = shortcutsCache[key];
-
-    // User chip
-    const a = document.createElement('a');
-    a.className = 'shortcut-chip';
-    a.href = s.url;
-    a.target = '_blank';
-    a.innerHTML = `<span>${s.icon}</span> <span>${escapeHtml(s.title)}</span>`;
-    bar.appendChild(a);
-
-    // Admin Row
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${s.icon}</td>
-      <td><b>${escapeHtml(s.title)}</b></td>
-      <td><a href="${s.url}" target="_blank">${escapeHtml(s.url)}</a></td>
-      <td><button class="btn btn-danger" style="padding:2px 6px;font-size:.72rem;" onclick="deleteShortcut('${key}')">ลบ</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-/* ==================== SYSTEM SETTINGS ==================== */
-function saveSystemSettings() {
-  const title = document.getElementById('setAppTitle').value.trim();
-  const banner = document.getElementById('setBannerText').value.trim();
-  const schedUrl = document.getElementById('setScheduleUrl').value.trim();
-  const color = document.getElementById('setPrimaryColor').value;
-
-  db.ref('settings').set({
-    title: title,
-    banner: banner,
-    scheduleUrl: schedUrl,
-    color: color
-  }).then(() => showToast('💾 บันทึกการตั้งค่าระบบแล้ว'));
-}
-
-async function uploadAdminScheduleImage() {
-  const file = document.getElementById('adminSchedFile').files[0];
-  if (!file) return;
-
-  showToast('⏳ กำลังอัปโหลดตารางเรียน...');
-  try {
-    const ref = storage.ref('schedule/' + Date.now() + '_' + file.name);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
-    document.getElementById('setScheduleUrl').value = url;
-    showToast('✅ อัปโหลดตารางเรียนสำเร็จ');
-  } catch (err) {
-    alert('อัปโหลดไม่สำเร็จ: ' + err.message);
-  }
-}
-
-function clearAllChatMessages() {
-  if (confirm('🚨 คำเตือน: คุณต้องการล้างประวัติแชททั้งหมดใช่หรือไม่?')) {
-    db.ref('messages').remove().then(() => showToast('ล้างประวัติแชททั้งหมดแล้ว'));
-  }
-}
-
-function applySystemSettings(s) {
-  if (s.title) document.getElementById('headerAppTitle').textContent = s.title;
+function applySettings(s){
+  const title = s.title || 'Classroom Cloud Chat';
+  document.querySelector('.chat-header .title').textContent = title;
+  document.getElementById('chatTitleHeader').textContent = title;
   
   const banner = document.getElementById('pinnedBanner');
-  if (s.banner) { banner.textContent = '📌 ' + s.banner; banner.style.display = 'block'; }
+  if (s.banner){ banner.textContent = '📌 ' + s.banner; banner.style.display = 'block'; }
   else { banner.style.display = 'none'; }
 
-  if (s.color) {
+  if (s.color){
     document.documentElement.style.setProperty('--primary', s.color);
     document.documentElement.style.setProperty('--primary-dark', s.color);
     document.documentElement.style.setProperty('--bubble-mine', s.color);
   }
-
-  const schedBox = document.getElementById('scheduleContainer');
-  if (s.scheduleUrl) {
-    schedBox.innerHTML = `<img src="${escapeHtml(s.scheduleUrl)}" class="schedule-img" onclick="window.open('${escapeHtml(s.scheduleUrl)}', '_blank')"><p style="font-size:.72rem;color:#777;text-align:center;margin-top:4px;">(คลิกรูปเพื่อขยายใหญ่)</p>`;
-  } else {
-    schedBox.innerHTML = `<p style="color:#888;font-size:.85rem;text-align:center;">ยังไม่ได้อัปโหลดตารางเรียน</p>`;
-  }
 }
 
-/* ==================== UTILS & HELPERS ==================== */
-function renderUserSelectOptions() {
-  const select = document.getElementById('targetUserSelect');
-  const cur = select.value;
-  select.innerHTML = '<option value="">-- เลือกผู้รับ --</option>';
-  Object.values(usersCache).forEach(u => {
-    if (u.uid !== myUid) {
-      const opt = document.createElement('option');
-      opt.value = u.uid;
-      opt.textContent = u.displayName + (u.role === 'admin' ? ' 🛠' : '');
-      select.appendChild(opt);
-    }
-  });
-  select.value = cur;
-}
-
-function togglePrivateInput() {
-  const mode = document.getElementById('chatMode').value;
-  document.getElementById('targetUserSelect').style.display = mode === 'private' ? 'inline-block' : 'none';
-}
-
-function escapeHtml(str) {
-  return str ? str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
-}
-
-function showToast(msg) {
-  const t = document.createElement('div');
-  t.className = 'toast'; t.textContent = msg;
-  document.body.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
-}
-
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+function closeModal(id){ document.getElementById(id).style.display = 'none'; }
 </script>
 </body>
 </html>
