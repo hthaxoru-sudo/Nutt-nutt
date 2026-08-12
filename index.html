@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classroom Online Chat</title>
+<style>
+  :root{
+    --primary:#4b6ef5;
+    --primary-dark:#3453d1;
+    --bg:#eef1f8;
+    --bubble-mine:#4b6ef5;
+    --bubble-other:#ffffff;
+    --danger:#e5484d;
+    --success:#2fa86a;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:0;}
+  body{background:linear-gradient(160deg,#eef1f8,#dfe6fb);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:12px;}
+
+  /* Overlays & Cards */
+  .overlay{position:fixed;inset:0;background:rgba(20,25,50,.55);display:flex;justify-content:center;align-items:center;z-index:999;padding:16px;}
+  .card{background:#fff;padding:28px 26px;border-radius:20px;width:340px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:12px;text-align:center;position:relative;}
+  .card h3{color:var(--primary-dark);font-size:1.25rem;}
+  .card input,.card textarea{padding:11px 12px;border:1px solid #d7dbea;border-radius:10px;outline:none;font-size:.95rem;}
+  .card input:focus,.card textarea:focus{border-color:var(--primary);}
+  .hint{font-size:.75rem;color:var(--success);font-weight:600;}
+  .link-btn{background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;text-decoration:underline;margin-top:2px;}
+  .row{display:flex;gap:8px;}
+
+  /* Main Chat Layout */
+  .chat-container{width:100%;max-width:640px;height:92vh;background:#fff;border-radius:22px;box-shadow:0 12px 34px rgba(30,40,90,.18);display:flex;flex-direction:column;overflow:hidden;}
+  .chat-header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;}
+  .chat-header .title{font-size:1.15rem;font-weight:700;}
+  .chat-header .sub{font-size:.75rem;opacity:.85;}
+  .online-badge{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:5px;}
+  .online-dot{width:7px;height:7px;background:#4dff88;border-radius:50%;display:inline-block;}
+
+  .control-bar{display:flex;gap:8px;padding:10px 14px;background:#f6f7fc;border-bottom:1px solid #e7e9f3;align-items:center;flex-wrap:wrap;}
+  .control-bar select{padding:7px 10px;border-radius:8px;border:1px solid #d7dbea;font-size:.85rem;background:#fff;}
+  .user-tag{font-weight:700;color:var(--primary-dark);background:#e9edff;padding:5px 10px;border-radius:14px;font-size:.85rem;}
+  .icon-btn{margin-left:auto;background:#fff;border:1px solid #d7dbea;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:.8rem;font-weight:600;color:#555;}
+  .icon-btn:hover{background:#f0f2fb;}
+  .admin-pill{background:#fff3cd;color:#8a6300;border:1px solid #ffe4a1;font-weight:700;}
+
+  .chat-messages{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
+  .message{max-width:76%;padding:10px 14px;border-radius:var(--radius);font-size:.93rem;line-height:1.4;word-wrap:break-word;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .message.mine{background:var(--bubble-mine);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+  .message.others{background:var(--bubble-other);color:#2b2f3a;align-self:flex-start;border-bottom-left-radius:4px;}
+  .message.system{align-self:center;background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;border-radius:20px;}
+  .message .meta{font-size:.72rem;opacity:.75;margin-bottom:4px;display:flex;justify-content:space-between;gap:14px;}
+  .message a{color:inherit;font-weight:700;text-decoration:underline;}
+  .badge-tiny{font-size:.68rem;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.15);margin-left:4px;}
+
+  .chat-input{display:flex;gap:8px;padding:12px 14px;background:#fff;border-top:1px solid #e7e9f3;align-items:center;}
+  .chat-input input[type="text"]{flex:1;padding:11px 14px;border:1px solid #d7dbea;border-radius:22px;outline:none;font-size:.92rem;}
+  .chat-input input[type="text"]:focus{border-color:var(--primary);}
+  .btn{padding:10px 18px;border:none;background:var(--primary);color:#fff;border-radius:22px;cursor:pointer;font-weight:700;font-size:.88rem;transition:.15s;}
+  .btn:hover{background:var(--primary-dark);}
+  .file-label{cursor:pointer;padding:9px 12px;background:#6c7688;color:#fff;border-radius:20px;font-size:.8rem;font-weight:600;}
+  .selected-file{font-size:.72rem;color:var(--primary-dark);padding:0 4px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* Admin Panel & Modals */
+  .admin-panel{width:100%;max-width:480px;max-height:80vh;overflow-y:auto;text-align:left;}
+  .admin-panel h3{color:var(--primary-dark);margin-bottom:6px;}
+  .section-title{font-weight:700;color:#333;margin:14px 0 6px;font-size:.95rem;border-bottom:2px solid #eef1f8;padding-bottom:4px;}
+  .report-item,.user-item{background:#f6f7fc;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px;}
+  .report-item.resolved{opacity:.55;}
+  .report-item .r-meta{font-size:.72rem;color:#777;display:flex;justify-content:space-between;}
+  .report-item .r-text{font-size:.88rem;color:#2b2f3a;}
+  .report-actions{display:flex;gap:6px;}
+  .report-actions button{flex:1;padding:6px;border:none;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;}
+  .user-item{flex-direction:row;justify-content:space-between;align-items:center;}
+  .close-x{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.3rem;color:#999;cursor:pointer;}
+  .close-x:hover{color:#333;}
+  .empty-note{font-size:.8rem;color:#999;text-align:center;padding:10px 0;}
+  .notif-badge{background:var(--danger);color:#fff;font-size:.65rem;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:4px;}
+
+  /* Toast & Banner */
+  .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-20px);background:#2b2f3a;color:#fff;padding:10px 18px;border-radius:12px;font-size:.85rem;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:1500;opacity:0;transition:.25s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .pinned-banner{background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;padding:8px 16px;text-align:center;border-bottom:1px solid #ffe4a1;display:none;}
+
+  .settings-form label{font-size:.78rem;color:#555;font-weight:600;display:block;margin:8px 0 4px;text-align:left;}
+  .settings-form input[type="text"],.settings-form textarea{width:100%;padding:9px 10px;border:1px solid #d7dbea;border-radius:8px;font-size:.85rem;}
+  .settings-form input[type="color"]{width:44px;height:34px;border:1px solid #d7dbea;border-radius:8px;padding:2px;cursor:pointer;}
+</style>
+
+<!-- Firebase SDK Compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<!-- หน้าล็อกอิน -->
+<div class="overlay" id="loginOverlay">
+  <div class="card">
+    <h3>เข้าสู่ระบบแชทออนไลน์</h3>
+    <input type="text" id="nicknameInput" placeholder="ใส่ชื่อเล่นของคุณ..." maxlength="20" onkeypress="if(event.key==='Enter'){login();}">
+    <input type="password" id="adminPassInput" placeholder="รหัสแอดมิน" style="display:none;" onkeypress="if(event.key==='Enter'){login();}">
+    <span class="hint">🌐 ระบบ Real-time • ไฟล์อัปโหลดผ่าน Cloud Storage</span>
+    <button class="btn" id="loginBtn" onclick="login()">เข้าสู่ห้องแชท</button>
+    <button class="link-btn" onclick="toggleAdminField()">เข้าสู่ระบบในฐานะแอดมิน</button>
+  </div>
+</div>
+
+<!-- หน้าต่างรายงานปัญหา -->
+<div class="overlay" id="reportOverlay" style="display:none;" onclick="if(event.target===this) closeModal('reportOverlay')">
+  <div class="card">
+    <button class="close-x" onclick="closeModal('reportOverlay')">&times;</button>
+    <h3>🐞 รายงานปัญหา / ขอฟีเจอร์</h3>
+    <textarea id="reportText" rows="4" placeholder="อธิบายปัญหาที่พบ... (กด Enter เพื่อส่ง / Shift+Enter ขึ้นบรรทัดใหม่)" onkeydown="handleReportEnter(event)"></textarea>
+    <div class="row">
+      <button class="btn" style="background:#6c7688; flex:1;" onclick="closeModal('reportOverlay')">ยกเลิก</button>
+      <button class="btn" style="flex:1;" onclick="submitReport()">ส่งรายงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- แผงควบคุมแอดมิน -->
+<div class="overlay" id="adminOverlay" style="display:none;" onclick="if(event.target===this) closeModal('adminOverlay')">
+  <div class="card admin-panel">
+    <button class="close-x" onclick="closeModal('adminOverlay')">&times;</button>
+    <h3>🛠 แผงควบคุมแอดมิน</h3>
+
+    <div class="section-title">📣 ส่งประกาศถึงทุกคน</div>
+    <div class="row">
+      <input type="text" id="announceInput" placeholder="พิมพ์ประกาศ..." onkeypress="if(event.key==='Enter'){sendAnnouncement();}">
+      <button class="btn" style="flex:0 0 auto" onclick="sendAnnouncement()">ส่ง</button>
+    </div>
+
+    <div class="section-title">👥 ผู้ใช้ออนไลน์ (<span id="onlineCountAdmin">0</span>)</div>
+    <div id="userList"></div>
+
+    <div class="section-title">📋 รายงานปัญหาที่ได้รับ</div>
+    <div id="reportList"></div>
+
+    <div class="section-title">🎨 ปรับแต่งหน้าเว็บแบบสด</div>
+    <div class="settings-form">
+      <label>ชื่อห้องแชท</label>
+      <input type="text" id="settingTitle" maxlength="40" placeholder="Classroom Cloud Chat">
+      <label>ข้อความประกาศปักหมุด</label>
+      <input type="text" id="settingBanner" maxlength="120" placeholder="เช่น วันนี้เรียนชดเชย...">
+      <label>สีหลักของธีม</label>
+      <input type="color" id="settingColor" value="#4b6ef5">
+      <label>Custom CSS</label>
+      <textarea id="settingCss" rows="3" placeholder=".chat-header{ background: red; }"></textarea>
+      <button class="btn" style="margin-top:10px;width:100%;" onclick="saveSettings()">💾 บันทึกและใช้งานทันที</button>
+    </div>
+  </div>
+</div>
+
+<!-- ห้องแชทหลัก -->
+<div class="chat-container" id="chatContainer" style="display:none;">
+  <div class="chat-header">
+    <div>
+      <div class="title">Classroom Cloud Chat</div>
+      <div class="sub">ห้องเรียนออนไลน์ • เก็บประวัติแชทอัตโนมัติ</div>
+    </div>
+    <div class="online-badge"><span class="online-dot"></span><span id="onlineCount">0</span> ออนไลน์</div>
+  </div>
+  <div class="pinned-banner" id="pinnedBanner"></div>
+
+  <div class="control-bar">
+    <span class="user-tag" id="myNicknameTag">-</span>
+    <select id="chatMode" onchange="togglePrivateInput()">
+      <option value="group">💬 แชทกลุ่ม</option>
+      <option value="private">🔒 แชทเดี่ยว</option>
+    </select>
+    <select id="targetUserSelect" style="display:none;">
+      <option value="">-- เลือกผู้รับ --</option>
+    </select>
+    <button class="icon-btn" onclick="openModal('reportOverlay')">🐞 รายงานปัญหา</button>
+    <button class="icon-btn admin-pill" id="adminPanelBtn" style="display:none;" onclick="openAdminPanel()">🛠 แอดมิน<span class="notif-badge" id="reportBadge" style="display:none;">0</span></button>
+  </div>
+
+  <div class="chat-messages" id="chatBox"></div>
+
+  <div class="chat-input">
+    <label for="fileInput" class="file-label">📎</label>
+    <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
+    <span class="selected-file" id="selectedFileLabel"></span>
+    <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter'){sendMessage();}">
+    <button class="btn" id="sendBtn" onclick="sendMessage()">ส่ง</button>
+  </div>
+</div>
+
+<script>
+/* 🟢 อัปเดตค่า Config และ Database URL โซน asia-southeast1 เรียบร้อยแล้ว */
+const firebaseConfig = {
+  apiKey: "AIzaSyC9emUQgRfiMmFML272Ue2rLimj6g3B4q8",
+  authDomain: "kkkk-c0436.firebaseapp.com",
+  projectId: "kkkk-c0436",
+  storageBucket: "kkkk-c0436.firebasestorage.app",
+  messagingSenderId: "268898744682",
+  appId: "1:268898744682:web:32c774a6f36c081b448d13",
+  measurementId: "G-NNSB108BRQ",
+  databaseURL: "https://kkkk-c0436-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+
+const ADMIN_PASSWORD = "admin1234"; // รหัสแอดมิน
+
+var myName = '', myUid = '', isAdmin = false;
+var selectedFile = null, onlineUsersCache = {}, reportsCache = {}, db = null, storage = null, auth = null;
+
+// ตั้งค่า Firebase
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  storage = firebase.storage();
+  auth = firebase.auth();
+} catch (err) {
+  alert('ไม่สามารถเชื่อมต่อ Firebase ได้: ' + err.message);
+}
+
+// กดปุ่ม Esc บนคีย์บอร์ดเพื่อปิดป๊อบอัพทั้งหมด
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeModal('reportOverlay');
+    closeModal('adminOverlay');
+  }
+});
+
+function handleReportEnter(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    submitReport();
+  }
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+function escapeHtml(str){
+  return str ? str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
+}
+
+function toggleAdminField(){
+  const el = document.getElementById('adminPassInput');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function login(){
+  const name = document.getElementById('nicknameInput').value.trim();
+  const adminPass = document.getElementById('adminPassInput').value;
+
+  if (!name) return alert('กรุณาใส่ชื่อเล่น');
+  if (document.getElementById('adminPassInput').style.display !== 'none' && adminPass){
+    if (adminPass !== ADMIN_PASSWORD) return alert('รหัสแอดมินไม่ถูกต้อง');
+    isAdmin = true;
+  }
+
+  try {
+    const userCredential = await auth.signInAnonymously();
+    myUid = userCredential.user.uid;
+    myName = name;
+
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('chatContainer').style.display = 'flex';
+    document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+    if (isAdmin) document.getElementById('adminPanelBtn').style.display = 'inline-block';
+
+    const userRef = db.ref('users/' + myUid);
+    userRef.set({ name: myName, uid: myUid, admin: isAdmin, joinedAt: Date.now() });
+    userRef.onDisconnect().remove();
+
+    initRealtimeListeners();
+  } catch (error) {
+    alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message + '\n(โปรดแน่ใจว่าเปิดใช้งาน Anonymous Auth ใน Firebase Console แล้ว)');
+  }
+}
+
+function initRealtimeListeners(){
+  db.ref('users').on('value', (snapshot) => {
+    const users = snapshot.val() || {};
+    onlineUsersCache = users;
+    renderTargetSelect(users);
+    const count = Object.keys(users).length;
+    document.getElementById('onlineCount').textContent = count;
+    document.getElementById('onlineCountAdmin').textContent = count;
+    if (isAdmin) renderUserList(users);
+  });
+
+  db.ref('messages').on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    if (data.mode === 'group' || data.senderUid === myUid || data.targetUid === myUid) {
+      renderMessage(data, data.senderUid === myUid);
+    }
+  });
+
+  db.ref('settings').on('value', (snapshot) => {
+    applySettings(snapshot.val() || {});
+  });
+
+  if (isAdmin){
+    db.ref('reports').on('value', (snapshot) => {
+      reportsCache = snapshot.val() || {};
+      renderReportList();
+      const openCount = Object.values(reportsCache).filter(r => r.status !== 'resolved').length;
+      updateReportBadge(openCount);
+    });
+  }
+}
+
+function renderTargetSelect(users){
+  const select = document.getElementById('targetUserSelect');
+  const current = select.value;
+  select.innerHTML = '<option value="">-- เลือกผู้รับ --</option>';
+  Object.values(users).forEach(u => {
+    if (u.uid !== myUid) {
+      const opt = document.createElement('option');
+      opt.value = u.uid;
+      opt.textContent = u.name + (u.admin ? ' 🛠' : '');
+      select.appendChild(opt);
+    }
+  });
+  select.value = current;
+}
+
+function togglePrivateInput(){
+  const mode = document.getElementById('chatMode').value;
+  document.getElementById('targetUserSelect').style.display = mode === 'private' ? 'inline-block' : 'none';
+}
+
+function handleFileSelect(){
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('กรุณาเลือกไฟล์ขนาดไม่เกิน 10MB');
+    document.getElementById('fileInput').value = '';
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('selectedFileLabel').textContent = '📁 ' + file.name;
+}
+
+async function sendMessage(){
+  const input = document.getElementById('messageInput');
+  const msgText = input.value.trim();
+  const mode = document.getElementById('chatMode').value;
+  const targetUid = document.getElementById('targetUserSelect').value;
+  const sendBtn = document.getElementById('sendBtn');
+
+  if (mode === 'private' && !targetUid) return alert('กรุณาเลือกผู้รับแชทเดี่ยว');
+  if (!msgText && !selectedFile) return;
+
+  sendBtn.disabled = true;
+  let fileData = null;
+
+  try {
+    if (selectedFile) {
+      document.getElementById('selectedFileLabel').textContent = '⏳ กำลังอัปโหลด...';
+      const fileRef = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
+      const snapshot = await fileRef.put(selectedFile);
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      fileData = { name: selectedFile.name, url: downloadURL };
+    }
+
+    await db.ref('messages').push({
+      sender: myName,
+      senderUid: myUid,
+      isAdmin: isAdmin,
+      text: msgText,
+      file: fileData,
+      mode: mode,
+      targetUid: targetUid || null,
+      time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      ts: Date.now()
+    });
+
+    input.value = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('selectedFileLabel').textContent = '';
+    selectedFile = null;
+  } catch (err) {
+    alert('ส่งข้อความไม่สำเร็จ: ' + err.message);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+function renderMessage(data, isMine){
+  const chatBox = document.getElementById('chatBox');
+  const msgDiv = document.createElement('div');
+
+  if (data.system) {
+    msgDiv.classList.add('message', 'system');
+    msgDiv.textContent = '📣 ' + data.text;
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return;
+  }
+
+  msgDiv.classList.add('message', isMine ? 'mine' : 'others');
+  const modeBadge = data.mode === 'private' ? '🔒 ส่วนตัว' : '👥 กลุ่ม';
+  const adminBadge = data.isAdmin ? '<span class="badge-tiny">แอดมิน</span>' : '';
+
+  let html = `<div class="meta"><span>${escapeHtml(data.sender)}${adminBadge} · ${modeBadge}</span><span>${escapeHtml(data.time)}</span></div>`;
+  if (data.text) html += `<div>${escapeHtml(data.text)}</div>`;
+  if (data.file) {
+    html += `<div style="margin-top:5px;">📁 <a href="${data.file.url}" download target="_blank">${escapeHtml(data.file.name)}</a></div>`;
+  }
+  msgDiv.innerHTML = html;
+  chatBox.appendChild(msgDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function submitReport(){
+  const text = document.getElementById('reportText').value.trim();
+  if (!text) return alert('กรุณาพิมพ์รายละเอียดปัญหา');
+  db.ref('reports').push({
+    user: myName,
+    uid: myUid,
+    text: text,
+    status: 'open',
+    ts: Date.now(),
+    time: new Date().toLocaleString('th-TH')
+  }).then(() => {
+    document.getElementById('reportText').value = '';
+    closeModal('reportOverlay');
+    showToast('ส่งรายงานถึงแอดมินเรียบร้อยแล้ว');
+  }).catch((err) => {
+    alert('ส่งรายงานไม่สำเร็จ: ' + err.message);
+  });
+}
+
+function openAdminPanel(){
+  renderReportList();
+  db.ref('settings').once('value').then(snap => {
+    const s = snap.val() || {};
+    document.getElementById('settingTitle').value = s.title || '';
+    document.getElementById('settingBanner').value = s.banner || '';
+    document.getElementById('settingColor').value = s.color || '#4b6ef5';
+    document.getElementById('settingCss').value = s.customCss || '';
+  });
+  openModal('adminOverlay');
+}
+
+function saveSettings(){
+  const settings = {
+    title: document.getElementById('settingTitle').value.trim(),
+    banner: document.getElementById('settingBanner').value.trim(),
+    color: document.getElementById('settingColor').value,
+    customCss: document.getElementById('settingCss').value
+  };
+  db.ref('settings').set(settings).then(() => showToast('✅ บันทึกการตั้งค่าเรียบร้อยแล้ว'));
+}
+
+function applySettings(s){
+  document.querySelector('.chat-header .title').textContent = s.title || 'Classroom Cloud Chat';
+  const banner = document.getElementById('pinnedBanner');
+  if (s.banner){ banner.textContent = '📌 ' + s.banner; banner.style.display = 'block'; }
+  else { banner.style.display = 'none'; }
+
+  if (s.color){
+    document.documentElement.style.setProperty('--primary', s.color);
+    document.documentElement.style.setProperty('--primary-dark', s.color);
+    document.documentElement.style.setProperty('--bubble-mine', s.color);
+  }
+
+  let styleTag = document.getElementById('customStyleInject');
+  if (!styleTag){
+    styleTag = document.createElement('style');
+    styleTag.id = 'customStyleInject';
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent = s.customCss || '';
+}
+
+function renderUserList(users){
+  const container = document.getElementById('userList');
+  container.innerHTML = '';
+  Object.keys(users).forEach(uid => {
+    const u = users[uid];
+    const div = document.createElement('div');
+    div.className = 'user-item';
+    div.innerHTML = `<span>${escapeHtml(u.name)}${u.admin ? ' 🛠' : ''}</span>`;
+    if (u.uid !== myUid){
+      const btn = document.createElement('button');
+      btn.textContent = 'เตะออก';
+      btn.style = 'padding:4px 8px;border:none;border-radius:6px;background:#ffe1e1;color:#c73438;cursor:pointer;';
+      btn.onclick = () => db.ref('users/' + uid).remove();
+      div.appendChild(btn);
+    }
+    container.appendChild(div);
+  });
+}
+
+function renderReportList(){
+  const container = document.getElementById('reportList');
+  container.innerHTML = '';
+  Object.keys(reportsCache).forEach(key => {
+    const r = reportsCache[key];
+    const div = document.createElement('div');
+    div.className = 'report-item' + (r.status === 'resolved' ? ' resolved' : '');
+    div.innerHTML = `
+      <div class="r-meta"><span>👤 ${escapeHtml(r.user)}</span><span>${escapeHtml(r.time || '')}</span></div>
+      <div class="r-text">${escapeHtml(r.text)}</div>
+      <div class="report-actions">
+        ${r.status !== 'resolved' ? `<button style="background:#d7f4e3;color:#1f7a4d" onclick="db.ref('reports/${key}/status').set('resolved')">✅ แก้ไขแล้ว</button>` : ''}
+        <button style="background:#ffe1e1;color:#c73438" onclick="db.ref('reports/${key}').remove()">🗑 ลบ</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function sendAnnouncement(){
+  const input = document.getElementById('announceInput');
+  if (!input.value.trim()) return;
+  db.ref('messages').push({
+    system: true, mode: 'group', text: input.value.trim(), sender: 'ระบบ', time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }), ts: Date.now()
+  });
+  input.value = '';
+}
+
+function updateReportBadge(count){
+  const badge = document.getElementById('reportBadge');
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+  badge.textContent = count;
+}
+
+function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+</script>
+</body>
+</html>
