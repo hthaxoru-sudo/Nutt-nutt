@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Classroom Online Chat & Hub</title>
+<title>Classroom Online Chat & Hub (Optimized)</title>
 <!-- Font Awesome สำหรับ Icon Shortcuts และ Admin UI -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -48,7 +48,7 @@
   .icon-btn:hover{background:#f0f2fb;}
   .admin-pill{background:#fff3cd;color:#8a6300;border:1px solid #ffe4a1;font-weight:700;margin-left:auto;}
 
-  /* Group Management Banner in Control Bar */
+  /* Group Info Bar */
   .group-info-bar{display:none;align-items:center;justify-content:space-between;background:#eef2ff;padding:6px 14px;border-bottom:1px solid #d0d9ff;font-size:.82rem;color:var(--primary-dark);}
 
   /* Shortcuts Bar */
@@ -58,8 +58,8 @@
   .shortcut-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:#f0f3ff;color:var(--primary-dark);border-radius:16px;font-size:.8rem;font-weight:600;text-decoration:none;transition:.15s;border:1px solid #d0d9ff;}
   .shortcut-chip:hover{background:var(--primary);color:#fff;}
 
-  .chat-messages{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
-  .message{max-width:76%;padding:10px 14px;border-radius:var(--radius);font-size:.93rem;line-height:1.4;word-wrap:break-word;box-shadow:0 1px 3px rgba(0,0,0,.06);position:relative;}
+  .chat-messages{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:var(--bg);contain:content;}
+  .message{max-width:76%;padding:10px 14px;border-radius:var(--radius);font-size:.93rem;line-height:1.4;word-wrap:break-word;box-shadow:0 1px 3px rgba(0,0,0,.06);position:relative;will-change:transform;}
   .message.mine{background:var(--bubble-mine);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
   .message.others{background:var(--bubble-other);color:#2b2f3a;align-self:flex-start;border-bottom-left-radius:4px;}
   .message.system{align-self:center;background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;border-radius:20px;padding:6px 16px;}
@@ -74,6 +74,7 @@
   .chat-input input[type="text"]:focus{border-color:var(--primary);}
   .btn{padding:10px 18px;border:none;background:var(--primary);color:#fff;border-radius:22px;cursor:pointer;font-weight:700;font-size:.88rem;transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
   .btn:hover{background:var(--primary-dark);}
+  .btn:disabled{background:#a0aec0;cursor:not-allowed;}
   .btn-danger{background:var(--danger);}
   .btn-danger:hover{background:#c73438;}
   .btn-warning{background:var(--warning);color:#fff;}
@@ -135,8 +136,6 @@
   .user-checkbox-list{max-height:160px;overflow-y:auto;border:1px solid #d7dbea;border-radius:10px;padding:8px;text-align:left;display:flex;flex-direction:column;gap:6px;}
   .user-checkbox-item{display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer;}
 
-  /* Responsive Admin Mobile Toggle */
-  .mobile-menu-btn{display:none;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#1e293b;margin-right:10px;}
   @media(max-width:768px){
     #adminContainer{flex-direction:column;}
     .admin-sidebar{position:fixed;inset:0 auto 0 0;z-index:1100;transform:translateX(-100%);}
@@ -165,7 +164,7 @@
   </div>
 </div>
 
-<!-- หน้าต่างสร้างกลุ่มใหม่ (Create Custom Group Modal) -->
+<!-- หน้าต่างสร้างกลุ่มใหม่ -->
 <div class="overlay" id="createGroupOverlay" style="display:none;" onclick="if(event.target===this) closeModal('createGroupOverlay')">
   <div class="card">
     <button class="close-x" onclick="closeModal('createGroupOverlay')">&times;</button>
@@ -180,7 +179,7 @@
   </div>
 </div>
 
-<!-- หน้าต่างจัดการกลุ่ม (Manage Group Modal for Owner) -->
+<!-- หน้าต่างจัดการกลุ่ม -->
 <div class="overlay" id="manageGroupOverlay" style="display:none;" onclick="if(event.target===this) closeModal('manageGroupOverlay')">
   <div class="card">
     <button class="close-x" onclick="closeModal('manageGroupOverlay')">&times;</button>
@@ -197,7 +196,7 @@
   </div>
 </div>
 
-<!-- หน้าต่างรายงานปัญหา (User) -->
+<!-- หน้าต่างรายงานปัญหา -->
 <div class="overlay" id="reportOverlay" style="display:none;" onclick="if(event.target===this) closeModal('reportOverlay')">
   <div class="card">
     <button class="close-x" onclick="closeModal('reportOverlay')">&times;</button>
@@ -210,7 +209,7 @@
   </div>
 </div>
 
-<!-- หน้าต่างแก้ไขชื่อผู้ใช้ (User Self-Name Edit) -->
+<!-- หน้าต่างแก้ไขชื่อผู้ใช้ -->
 <div class="overlay" id="editProfileOverlay" style="display:none;" onclick="if(event.target===this) closeModal('editProfileOverlay')">
   <div class="card">
     <button class="close-x" onclick="closeModal('editProfileOverlay')">&times;</button>
@@ -227,7 +226,7 @@
   </div>
 </div>
 
-<!-- หน้าต่างดูประวัติผู้ใช้ (Admin History Modal) -->
+<!-- หน้าต่างดูประวัติผู้ใช้ -->
 <div class="overlay" id="userHistoryOverlay" style="display:none;" onclick="if(event.target===this) closeModal('userHistoryOverlay')">
   <div class="card" style="width:450px;max-width:95vw;text-align:left;">
     <button class="close-x" onclick="closeModal('userHistoryOverlay')">&times;</button>
@@ -237,7 +236,7 @@
   </div>
 </div>
 
-<!-- ห้องแชทหลัก (USER AREA) -->
+<!-- ห้องแชทหลัก -->
 <div class="chat-container" id="chatContainer" style="display:none;">
   <div class="chat-header">
     <div>
@@ -264,7 +263,7 @@
       </optgroup>
     </select>
 
-    <select id="targetUserSelect" style="display:none;">
+    <select id="targetUserSelect" style="display:none;" onchange="handleChatModeChange()">
       <option value="">-- เลือกผู้รับ --</option>
     </select>
 
@@ -289,9 +288,7 @@
   </div>
 </div>
 
-<!-- ========================================================= -->
 <!-- FULL ADMIN CONTROL CENTER -->
-<!-- ========================================================= -->
 <div id="adminContainer">
   <div class="admin-sidebar" id="adminSidebar">
     <div class="admin-sidebar-header">
@@ -354,6 +351,7 @@ var customGroupsCache = {};
 var systemSettings = { allowNameChange: true, allowFileUpload: true, maintenanceMode: false, maxFileSizeMB: 10 }; 
 var db = null, storage = null, auth = null;
 var currentAdminTab = 'dashboard';
+var activeListeners = {}; // ป้องกัน Memory Leak
 
 var systemDiagnostics = {
   auth: { status: 'ok', name: 'Firebase Auth', msg: 'Working' },
@@ -372,9 +370,10 @@ try {
   auth = firebase.auth();
 } catch (err) {
   console.error('Firebase Init Error:', err.message);
+  systemDiagnostics.rtdb.status = 'error';
+  systemDiagnostics.rtdb.msg = err.message;
 }
 
-// กรองป้องกันการบันทึก Auth Error ซ้ำๆ จาก Guest
 function logSystemError(type, message) {
   if (!myUid && type.includes('Auth Error')) return; 
   console.error(`[${type}]`, message);
@@ -386,7 +385,7 @@ function logSystemError(type, message) {
       uid: myUid || 'Guest',
       user: myName || 'Unknown',
       ts: Date.now()
-    });
+    }).catch(()=>{});
   }
 }
 
@@ -399,7 +398,7 @@ function logActivity(actor, uid, action, details) {
       action: action,
       details: details,
       ts: Date.now()
-    });
+    }).catch(()=>{});
   }
 }
 
@@ -425,7 +424,7 @@ function showToast(msg){
   t.className = 'toast'; t.textContent = msg;
   document.body.appendChild(t);
   requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 3500); }, 3500);
 }
 
 function escapeHtml(str){
@@ -497,8 +496,20 @@ async function login(){
   }
 }
 
+// ล้าง Event Listener เก่า ป้องกัน Memory Leak
+function detachListeners() {
+  Object.keys(activeListeners).forEach(path => {
+    db.ref(path).off();
+  });
+  activeListeners = {};
+}
+
 function initRealtimeListeners(){
-  db.ref('users/' + myUid).on('value', (snap) => {
+  detachListeners();
+
+  const userRef = db.ref('users/' + myUid);
+  activeListeners['users/' + myUid] = true;
+  userRef.on('value', (snap) => {
     if (!snap.exists()) {
       alert('คุณถูก Admin เตะออกจากระบบ');
       location.reload();
@@ -512,14 +523,18 @@ function initRealtimeListeners(){
     }
   });
 
-  db.ref('bans/' + myUid).on('value', (snap) => {
+  const banRef = db.ref('bans/' + myUid);
+  activeListeners['bans/' + myUid] = true;
+  banRef.on('value', (snap) => {
     if (snap.exists()) {
       alert('🚫 บัญชีของคุณถูกแบนโดย Admin');
       location.reload();
     }
   });
 
-  db.ref('users').on('value', (snapshot) => {
+  const allUsersRef = db.ref('users');
+  activeListeners['users'] = true;
+  allUsersRef.on('value', (snapshot) => {
     allUsersCache = snapshot.val() || {};
     onlineUsersCache = {};
     Object.keys(allUsersCache).forEach(k => {
@@ -534,34 +549,24 @@ function initRealtimeListeners(){
     if (isAdmin && currentAdminTab === 'dashboard') renderAdminDashboard();
   });
 
-  db.ref('customGroups').on('value', (snapshot) => {
+  const customGroupsRef = db.ref('customGroups');
+  activeListeners['customGroups'] = true;
+  customGroupsRef.on('value', (snapshot) => {
     customGroupsCache = snapshot.val() || {};
     renderCustomGroupSelectOptions();
     handleChatModeChange();
   });
 
-  db.ref('messages').on('value', (snapshot) => {
-    const chatBox = document.getElementById('chatBox');
-    chatBox.innerHTML = ''; 
-    const messages = snapshot.val() || {};
-    const mode = document.getElementById('chatMode').value;
-    const targetUid = document.getElementById('targetUserSelect').value;
-
-    Object.keys(messages).forEach(key => {
-      const data = messages[key];
-      if (mode === 'group' && data.mode === 'group') {
-        renderMessage(key, data, data.senderUid === myUid);
-      } else if (mode === 'private' && data.mode === 'private') {
-        if ((data.senderUid === myUid && data.targetUid === targetUid) || (data.senderUid === targetUid && data.targetUid === myUid)) {
-          renderMessage(key, data, data.senderUid === myUid);
-        }
-      } else if (mode.startsWith('custom_') && data.mode === mode) {
-        renderMessage(key, data, data.senderUid === myUid);
-      }
-    });
+  // ใช้ Limit to Last 100 ข้อความ ป้องกันข้อความสะสมหน่วงเครื่อง
+  const msgRef = db.ref('messages').orderByChild('ts').limitToLast(100);
+  activeListeners['messages'] = true;
+  msgRef.on('value', (snapshot) => {
+    renderFilteredMessages(snapshot.val() || {});
   });
 
-  db.ref('settings').on('value', (snapshot) => {
+  const settingsRef = db.ref('settings');
+  activeListeners['settings'] = true;
+  settingsRef.on('value', (snapshot) => {
     const s = snapshot.val() || {};
     if (s.system) {
       systemSettings = Object.assign(systemSettings, s.system);
@@ -573,14 +578,18 @@ function initRealtimeListeners(){
     applySettings(s);
   });
 
-  db.ref('shortcuts').on('value', (snapshot) => {
+  const shortcutsRef = db.ref('shortcuts');
+  activeListeners['shortcuts'] = true;
+  shortcutsRef.on('value', (snapshot) => {
     shortcutsCache = snapshot.val() || {};
     renderUserShortcuts(shortcutsCache);
     if (isAdmin && currentAdminTab === 'shortcuts') renderAdminShortcutsSection();
   });
 
   if (isAdmin){
-    db.ref('reports').on('value', (snapshot) => {
+    const reportsRef = db.ref('reports');
+    activeListeners['reports'] = true;
+    reportsRef.on('value', (snapshot) => {
       reportsCache = snapshot.val() || {};
       const openCount = Object.values(reportsCache).filter(r => r.status !== 'resolved').length;
       updateReportBadge(openCount);
@@ -652,25 +661,67 @@ function handleChatModeChange(){
     }
   }
 
-  db.ref('messages').once('value', snapshot => {
-    const chatBox = document.getElementById('chatBox');
-    chatBox.innerHTML = '';
-    const messages = snapshot.val() || {};
-    const targetUid = targetSelect.value;
-
-    Object.keys(messages).forEach(key => {
-      const data = messages[key];
-      if (mode === 'group' && data.mode === 'group') {
-        renderMessage(key, data, data.senderUid === myUid);
-      } else if (mode === 'private' && data.mode === 'private') {
-        if ((data.senderUid === myUid && data.targetUid === targetUid) || (data.senderUid === targetUid && data.targetUid === myUid)) {
-          renderMessage(key, data, data.senderUid === myUid);
-        }
-      } else if (mode.startsWith('custom_') && data.mode === mode) {
-        renderMessage(key, data, data.senderUid === myUid);
-      }
-    });
+  db.ref('messages').orderByChild('ts').limitToLast(100).once('value', snapshot => {
+    renderFilteredMessages(snapshot.val() || {});
   });
+}
+
+function renderFilteredMessages(messages){
+  const chatBox = document.getElementById('chatBox');
+  chatBox.innerHTML = ''; 
+  const fragment = document.createDocumentFragment();
+  const mode = document.getElementById('chatMode').value;
+  const targetUid = document.getElementById('targetUserSelect').value;
+
+  Object.keys(messages).forEach(key => {
+    const data = messages[key];
+    let shouldRender = false;
+
+    if (mode === 'group' && data.mode === 'group') {
+      shouldRender = true;
+    } else if (mode === 'private' && data.mode === 'private') {
+      if ((data.senderUid === myUid && data.targetUid === targetUid) || (data.senderUid === targetUid && data.targetUid === myUid)) {
+        shouldRender = true;
+      }
+    } else if (mode.startsWith('custom_') && data.mode === mode) {
+      shouldRender = true;
+    }
+
+    if (shouldRender) {
+      const msgNode = createMessageNode(key, data, data.senderUid === myUid);
+      fragment.appendChild(msgNode);
+    }
+  });
+
+  chatBox.appendChild(fragment);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function createMessageNode(key, data, isMine) {
+  const msgDiv = document.createElement('div');
+
+  if (data.system) {
+    msgDiv.className = 'message system';
+    msgDiv.textContent = '📣 ' + data.text;
+    return msgDiv;
+  }
+
+  msgDiv.className = 'message ' + (isMine ? 'mine' : 'others');
+  let modeBadge = '👥 กลุ่ม';
+  if (data.mode === 'private') modeBadge = '🔒 ส่วนตัว';
+  else if (data.mode && data.mode.startsWith('custom_')) modeBadge = '👥 กลุ่มย่อย';
+
+  const adminBadge = data.isAdmin ? '<span class="badge-tiny">แอดมิน</span>' : '';
+  const canDelete = isMine || isAdmin;
+  const delBtnHtml = canDelete ? `<button class="del-btn" onclick="deleteMessage('${key}')"><i class="fa-solid fa-trash"></i></button>` : '';
+
+  let html = `<div class="meta"><span>${escapeHtml(data.sender)}${adminBadge} · ${modeBadge}</span><span>${escapeHtml(data.time)}${delBtnHtml}</span></div>`;
+  if (data.text) html += `<div>${escapeHtml(data.text)}</div>`;
+  if (data.file) {
+    html += `<div style="margin-top:5px;">📁 <a href="${escapeHtml(data.file.url)}" download target="_blank">${escapeHtml(data.file.name)}</a></div>`;
+  }
+  msgDiv.innerHTML = html;
+  return msgDiv;
 }
 
 function openCreateGroupModal(){
@@ -778,20 +829,21 @@ function deleteCurrentGroup(){
 }
 
 function handleFileSelect(){
-  const file = document.getElementById('fileInput').files[0];
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
   if (!file) return;
 
   const maxBytes = (systemSettings.maxFileSizeMB || 10) * 1024 * 1024;
   if (file.size > maxBytes) {
     alert(`กรุณาเลือกไฟล์ขนาดไม่เกิน ${systemSettings.maxFileSizeMB || 10}MB`);
-    document.getElementById('fileInput').value = '';
+    fileInput.value = '';
     return;
   }
   selectedFile = file;
   document.getElementById('selectedFileLabel').textContent = '📁 ' + file.name;
 }
 
-// แก้ไขปัญหา Firebase Storage Exception
+// ปรับปรุงระบบส่งข้อความ & อัปโหลดไฟล์ Firebase Storage พร้อม Fallback
 async function sendMessage(){
   if (!systemSettings.allowFileUpload && selectedFile) {
     alert('⚠️ การแนบไฟล์ถูกปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ');
@@ -815,13 +867,13 @@ async function sendMessage(){
       document.getElementById('selectedFileLabel').textContent = '⏳ กำลังอัปโหลด...';
       try {
         const fileRef = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
-        const snapshot = await fileRef.put(selectedFile);
-        const downloadURL = await snapshot.ref.getDownloadURL();
+        const uploadTask = await fileRef.put(selectedFile);
+        const downloadURL = await uploadTask.ref.getDownloadURL();
         fileData = { name: selectedFile.name, url: downloadURL };
       } catch (stErr) {
         systemDiagnostics.fileUpload.status = 'error';
         logSystemError('Storage File Upload', stErr.message);
-        alert('⚠️ ไม่สามารถอัปโหลดไฟล์ไปที่ Firebase Storage ได้ (ตรวจพบปัญหา CORS/Storage Rules)\nระบบจะทำการส่งเฉพาะข้อความตัวอักษรแทน');
+        alert('⚠️ อัปโหลดไฟล์ลง Storage ไม่สำเร็จ (สิทธิ์การเข้าถึงหรือ CORS Policy)\nระบบจะทำการส่งเฉพาะข้อความ');
       }
     }
 
@@ -848,37 +900,6 @@ async function sendMessage(){
     sendBtn.disabled = false;
     input.focus();
   }
-}
-
-function renderMessage(key, data, isMine){
-  const chatBox = document.getElementById('chatBox');
-  const msgDiv = document.createElement('div');
-
-  if (data.system) {
-    msgDiv.classList.add('message', 'system');
-    msgDiv.textContent = '📣 ' + data.text;
-    chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    return;
-  }
-
-  msgDiv.classList.add('message', isMine ? 'mine' : 'others');
-  let modeBadge = '👥 กลุ่ม';
-  if (data.mode === 'private') modeBadge = '🔒 ส่วนตัว';
-  else if (data.mode.startsWith('custom_')) modeBadge = '👥 กลุ่มย่อย';
-
-  const adminBadge = data.isAdmin ? '<span class="badge-tiny">แอดมิน</span>' : '';
-  const canDelete = isMine || isAdmin;
-  const delBtnHtml = canDelete ? `<button class="del-btn" onclick="deleteMessage('${key}')"><i class="fa-solid fa-trash"></i></button>` : '';
-
-  let html = `<div class="meta"><span>${escapeHtml(data.sender)}${adminBadge} · ${modeBadge}</span><span>${escapeHtml(data.time)}${delBtnHtml}</span></div>`;
-  if (data.text) html += `<div>${escapeHtml(data.text)}</div>`;
-  if (data.file) {
-    html += `<div style="margin-top:5px;">📁 <a href="${data.file.url}" download target="_blank">${escapeHtml(data.file.name)}</a></div>`;
-  }
-  msgDiv.innerHTML = html;
-  chatBox.appendChild(msgDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function deleteMessage(key){
@@ -978,10 +999,9 @@ function renderUserShortcuts(shortcuts){
   });
 }
 
-// ---------------------------------------------------------
-// FULL ADMIN CONTROL CENTER IMPLEMENTATION
-// ---------------------------------------------------------
+/* FULL ADMIN CONTROL CENTER */
 function openFullAdminCenter(){
+  if (!isAdmin) return alert('สิทธิ์ไม่ถูกต้อง');
   document.getElementById('adminContainer').style.display = 'flex';
   document.getElementById('adminUserDisplayName').textContent = `${myName} (${myUid.substring(0, 6)}...)`;
   switchAdminTab('dashboard');
@@ -1122,9 +1142,6 @@ async function renderAdminDashboard(){
   });
 }
 
-// ---------------------------------------------------------
-// USER MANAGEMENT & ROLE PERMISSION TOGGLE
-// ---------------------------------------------------------
 function renderAdminUsersSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1461,7 +1478,7 @@ function renderAdminShortcutsSection(){
     const s = shortcutsCache[key];
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${s.icon || '🔗'}</td>
+      <td>${escapeHtml(s.icon) || '🔗'}</td>
       <td><strong>${escapeHtml(s.name)}</strong></td>
       <td><a href="${escapeHtml(s.url)}" target="_blank" style="color:var(--primary);">${escapeHtml(s.url)}</a></td>
       <td><span class="status-tag ${s.enabled ? 'status-online' : 'status-offline'}">${s.enabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}</span></td>
