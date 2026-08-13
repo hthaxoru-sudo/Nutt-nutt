@@ -1039,25 +1039,42 @@ if (data.isQA) {
   const isAnswered = data.qaAnswered;
 
   html += `
-    <div class="qa-card ${isAnswered ? 'answered' : ''}">
-      <div style="font-weight:bold;font-size:.85rem;">
-        ❓ คำถาม Q&A ${isAnswered ? '✅ (ตอบแล้ว)' : '⏳ (รอคำตอบ)'}
+    <div class="qa-card ${isAnswered ? 'answered' : ''}"
+         style="
+           color:#000000;
+           background:${isAnswered ? '#ecfdf5' : '#eff6ff'};
+         ">
+
+      <div style="
+        font-weight:bold;
+        font-size:.85rem;
+        color:#000000;
+      ">
+        ❓ คำถาม Q&A 
+        <span style="color:#000000;">
+          ${isAnswered ? '✅ (ตอบแล้ว)' : '⏳ (รอคำตอบ)'}
+        </span>
       </div>
 
-      <div>${parseFormattedText(data.text)}</div>
+      <div style="
+        color:#000000;
+        margin-top:4px;
+      ">
+        ${parseFormattedText(data.text)}
+      </div>
 
       ${
         !isAnswered && (isAdmin || isMine)
           ? `
             <button
-              class="btn btn-sm"
-              style="margin-top:6px;background:#000000;color:#ffffff;border:1px solid #000000;"
+              class="btn btn-sm qa-answer-btn"
               onclick="markQAAnswered('${key}')">
               Mark as Answered
             </button>
           `
           : ''
       }
+
     </div>
   `;
 }
