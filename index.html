@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Classroom Online Chat & Hub (Optimized)</title>
+<title>FriendHub - Private Social & Chat</title>
 <!-- Font Awesome สำหรับ Icon Shortcuts และ Admin UI -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -24,13 +24,39 @@
 
   /* Overlays & Cards */
   .overlay{position:fixed;inset:0;background:rgba(20,25,50,.55);display:flex;justify-content:center;align-items:center;z-index:999;padding:16px;}
-  .card{background:#fff;padding:28px 26px;border-radius:20px;width:380px;max-width:95vw;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:12px;text-align:center;position:relative;}
-  .card h3{color:var(--primary-dark);font-size:1.25rem;}
+  .card{background:#fff;padding:32px 26px;border-radius:24px;width:380px;max-width:95vw;box-shadow:0 12px 36px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:16px;text-align:center;position:relative;}
+  .card h3{color:var(--primary-dark);font-size:1.35rem;font-weight:700;}
+  .card p{font-size:.88rem;color:#64748b;}
   .card input,.card textarea,.card select{padding:11px 12px;border:1px solid #d7dbea;border-radius:10px;outline:none;font-size:.95rem;}
   .card input:focus,.card textarea:focus,.card select:focus{border-color:var(--primary);}
-  .hint{font-size:.75rem;color:var(--success);font-weight:600;}
-  .link-btn{background:none;border:none;color:var(--primary);font-size:.8rem;cursor:pointer;text-decoration:underline;margin-top:2px;}
   .row{display:flex;gap:8px;}
+
+  /* Google Sign-In Custom Button */
+  .google-btn {
+    width: 100%;
+    background-color: #ffffff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 24px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+  .google-btn:hover {
+    background-color: #f8faff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  }
+  .google-btn i {
+    font-size: 1.2rem;
+    color: #4285f4;
+  }
 
   /* Main Chat Layout */
   .chat-container{width:100%;max-width:680px;height:92vh;background:#fff;border-radius:22px;box-shadow:0 12px 34px rgba(30,40,90,.18);display:flex;flex-direction:column;overflow:hidden;position:relative;}
@@ -40,11 +66,17 @@
   .online-badge{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:5px;}
   .online-dot{width:7px;height:7px;background:#4dff88;border-radius:50%;display:inline-block;}
 
+  /* NEW: Friends Bar Above Controls */
+  .friends-bar{display:flex;gap:10px;padding:8px 14px;background:#f0f3ff;border-bottom:1px solid #d0d9ff;overflow-x:auto;align-items:center;}
+  .friends-bar::-webkit-scrollbar{height:3px;}
+  .friend-pill{display:inline-flex;align-items:center;gap:6px;background:#fff;padding:4px 10px;border-radius:14px;font-size:.78rem;font-weight:600;color:#334155;border:1px solid #cbd5e1;cursor:pointer;white-space:nowrap;}
+  .friend-pill:hover{border-color:var(--primary);color:var(--primary-dark);}
+
   .control-bar{display:flex;gap:6px;padding:10px 14px;background:#f6f7fc;border-bottom:1px solid #e7e9f3;align-items:center;flex-wrap:wrap;}
   .control-bar select{padding:7px 10px;border-radius:8px;border:1px solid #d7dbea;font-size:.85rem;background:#fff;}
   .user-tag{font-weight:700;color:var(--primary-dark);background:#e9edff;padding:5px 10px;border-radius:14px;font-size:.85rem;cursor:pointer;}
   .user-tag:hover{background:#dbe2ff;}
-  .icon-btn{background:#fff;border:1px solid #d7dbea;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:.8rem;font-weight:600;color:#555;transition:.15s;display:inline-flex;align-items:center;gap:4px;}
+  .icon-btn{background:#fff;border:1px solid #d7dbea;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:.8rem;font-weight:600;color:#555;transition:.15s;display:inline-flex;align-items:center;gap:4px;position:relative;}
   .icon-btn:hover{background:#f0f2fb;}
   .admin-pill{background:#fff3cd;color:#8a6300;border:1px solid #ffe4a1;font-weight:700;margin-left:auto;}
 
@@ -64,10 +96,41 @@
   .message.others{background:var(--bubble-other);color:#2b2f3a;align-self:flex-start;border-bottom-left-radius:4px;}
   .message.system{align-self:center;background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;border-radius:20px;padding:6px 16px;}
   .message .meta{font-size:.72rem;opacity:.75;margin-bottom:4px;display:flex;justify-content:space-between;gap:14px;align-items:center;}
-  .message a{color:inherit;font-weight:700;text-decoration:underline;}
+  
+  .message a{color:inherit;font-weight:700;text-decoration:underline;word-break:break-all;}
+  .message.mine a{color:#e0e7ff;}
+  .message.others a{color:var(--primary-dark);}
+
   .badge-tiny{font-size:.68rem;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.15);margin-left:4px;}
-  .del-btn{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:.75rem;margin-left:8px;}
+  .badge-role-friend{background:#e2e8f0;color:#334155;}
+  .badge-role-admin{background:#fef3c7;color:#92400e;font-weight:bold;}
+  .badge-role-owner{background:#fef08a;color:#854d0e;font-weight:bold;border:1px solid #facc15;}
+  
+  .del-btn, .action-btn{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:.75rem;margin-left:6px;}
   .del-btn:hover{opacity:1;color:var(--danger);}
+  .action-btn:hover{opacity:1;}
+
+  /* UI Additions for new features */
+  .reply-preview-bar{display:none;background:#f1f5f9;padding:6px 14px;border-top:1px solid #e2e8f0;font-size:.8rem;color:#475569;justify-content:space-between;align-items:center;}
+  .quote-box{background:rgba(0,0,0,0.06);border-left:3px solid var(--primary);padding:4px 8px;border-radius:4px;margin-bottom:6px;font-size:.82rem;}
+  .message.mine .quote-box{background:rgba(255,255,255,0.2);border-left-color:#fff;}
+  .qa-card{border:1px solid #3b82f6;background:#eff6ff;padding:10px;border-radius:12px;margin-bottom:4px;}
+  .qa-card.answered{border-color:#10b981;background:#ecfdf5;}
+  .poll-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;margin-top:6px;color:#1e293b;}
+  .poll-option{background:#f8fafc;border:1px solid #cbd5e1;padding:6px 10px;border-radius:8px;margin-top:6px;cursor:pointer;display:flex;justify-content:space-between;font-size:.85rem;transition:0.15s;}
+  .poll-option:hover{background:#e2e8f0;}
+  code-block{background:#1e293b;color:#f8fafc;padding:8px;border-radius:8px;display:block;font-family:monospace;font-size:.82rem;margin:4px 0;white-space:pre-wrap;}
+
+  /* NEW: Reactions UI */
+  .reactions-bar{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+  .reaction-chip{background:rgba(0,0,0,0.05);padding:2px 6px;border-radius:10px;font-size:.75rem;display:inline-flex;align-items:center;gap:3px;cursor:pointer;border:1px solid rgba(0,0,0,0.08);}
+  .message.mine .reaction-chip{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);}
+  .reaction-picker{display:none;position:absolute;bottom:100%;right:0;background:#fff;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.15);padding:4px;border-radius:20px;gap:6px;z-index:10;}
+  .reaction-picker span{cursor:pointer;font-size:1.1rem;transition:transform 0.1s;}
+  .reaction-picker span:hover{transform:scale(1.3);}
+
+  /* Typing Indicator */
+  .typing-indicator{padding:4px 16px;font-size:.75rem;color:#64748b;font-style:italic;display:none;background:var(--bg);}
 
   .chat-input{display:flex;gap:8px;padding:12px 14px;background:#fff;border-top:1px solid #e7e9f3;align-items:center;}
   .chat-input input[type="text"]{flex:1;padding:11px 14px;border:1px solid #d7dbea;border-radius:22px;outline:none;font-size:.92rem;}
@@ -82,15 +145,13 @@
   .btn-secondary{background:#6c7688;}
   .btn-secondary:hover{background:#5a6272;}
   .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px;}
-  .file-label{cursor:pointer;padding:9px 12px;background:#6c7688;color:#fff;border-radius:20px;font-size:.8rem;font-weight:600;}
-  .selected-file{font-size:.72rem;color:var(--primary-dark);padding:0 4px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   .close-x{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.3rem;color:#999;cursor:pointer;}
   .close-x:hover{color:#333;}
   .notif-badge{background:var(--danger);color:#fff;font-size:.65rem;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:4px;}
   .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-20px);background:#2b2f3a;color:#fff;padding:10px 18px;border-radius:12px;font-size:.85rem;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:2000;opacity:0;transition:.25s;pointer-events:none;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-  .pinned-banner{background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;padding:8px 16px;text-align:center;border-bottom:1px solid #ffe4a1;display:none;}
+  .pinned-banner{background:#fff3cd;color:#8a6300;font-size:.8rem;font-weight:600;padding:8px 16px;text-align:center;border-bottom:1px solid #ffe4a1;display:none;cursor:pointer;}
 
   /* FULL ADMIN CONTROL CENTER */
   #adminContainer{position:fixed;inset:0;background:#f4f6fb;z-index:1000;display:none;flex-direction:row;overflow:hidden;}
@@ -109,14 +170,12 @@
   .admin-user-info{display:flex;align-items:center;gap:10px;font-size:.88rem;color:#64748b;font-weight:600;}
   .admin-content{flex:1;padding:24px;overflow-y:auto;}
 
-  /* Dashboard Widgets */
   .grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
   .stat-card{background:#fff;padding:20px;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 2px 4px rgba(0,0,0,0.02);display:flex;align-items:center;gap:16px;}
   .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
   .stat-info .num{font-size:1.5rem;font-weight:700;color:#0f172a;}
   .stat-info .label{font-size:.8rem;color:#64748b;font-weight:600;}
 
-  /* Data Tables & Cards UI */
   .admin-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:20px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.02);}
   .admin-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
   .admin-card-title{font-size:1.05rem;font-weight:700;color:#1e293b;}
@@ -132,9 +191,21 @@
   .search-box{display:flex;gap:10px;margin-bottom:16px;}
   .search-box input{flex:1;padding:9px 14px;border:1px solid #cbd5e1;border-radius:8px;outline:none;font-size:.9rem;}
 
-  /* Checkbox Member List UI */
   .user-checkbox-list{max-height:160px;overflow-y:auto;border:1px solid #d7dbea;border-radius:10px;padding:8px;text-align:left;display:flex;flex-direction:column;gap:6px;}
   .user-checkbox-item{display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer;}
+
+  /* Profile Card Overlay Styling */
+  .profile-card {text-align:left;}
+  .profile-info-box {background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;}
+  .profile-info-item {display:flex;justify-content:space-between;font-size:.85rem;}
+  .profile-info-item .label {color:#64748b;font-weight:600;}
+  .profile-info-item .val {color:#1e293b;font-weight:700;word-break:break-all;}
+
+  /* Stats Grid on Profile Card */
+  .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .profile-stat-item{background:#eef2ff;padding:8px;border-radius:8px;text-align:center;}
+  .profile-stat-item .num{font-size:1.1rem;font-weight:700;color:var(--primary-dark);}
+  .profile-stat-item .lbl{font-size:.72rem;color:#64748b;}
 
   @media(max-width:768px){
     #adminContainer{flex-direction:column;}
@@ -148,19 +219,20 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 </head>
 <body>
 
-<!-- หน้าล็อกอิน -->
+<!-- หน้าล็อกอิน กดครั้งเดียวผ่าน Google -->
 <div class="overlay" id="loginOverlay">
   <div class="card">
-    <h3>เข้าสู่ระบบแชทห้องเรียน</h3>
-    <input type="text" id="nicknameInput" placeholder="ใส่ชื่อเล่นของคุณ..." maxlength="20" onkeypress="if(event.key==='Enter'){login();}">
-    <input type="password" id="adminPassInput" placeholder="รหัสแอดมิน" style="display:none;" onkeypress="if(event.key==='Enter'){login();}">
-    <span class="hint">🌐 ระบบ Real-time • ข่าวสาร & แชทกลุ่ม</span>
-    <button class="btn" id="loginBtn" onclick="login()">เข้าสู่ห้องแชท</button>
-    <button class="link-btn" onclick="toggleAdminField()">เข้าสู่ระบบในฐานะแอดมิน</button>
+    <div style="font-size:2.5rem;color:var(--primary);"><i class="fa-solid fa-comments"></i></div>
+    <h3>เข้าสู่ระบบ FriendHub</h3>
+    <p>กดปุ่มด้านล่างเพื่อเข้าสู่ระบบกลุ่มเพื่อนด้วย Google</p>
+    
+    <button class="google-btn" id="loginBtn" onclick="loginWithGoogle()">
+      <i class="fa-brands fa-google"></i>
+      <span>เข้าสู่ระบบด้วย Google</span>
+    </button>
   </div>
 </div>
 
@@ -209,19 +281,58 @@
   </div>
 </div>
 
-<!-- หน้าต่างแก้ไขชื่อผู้ใช้ -->
+<!-- หน้าต่างโปรไฟล์แบบ Card และแก้ไขข้อมูล -->
 <div class="overlay" id="editProfileOverlay" style="display:none;" onclick="if(event.target===this) closeModal('editProfileOverlay')">
-  <div class="card">
+  <div class="card profile-card">
     <button class="close-x" onclick="closeModal('editProfileOverlay')">&times;</button>
-    <h3>✏️ แก้ไขชื่อผู้ใช้</h3>
-    <div style="text-align:left;font-size:.8rem;color:#64748b;margin-bottom:6px;">
-      <div>UID: <span id="profileUidText" style="font-family:monospace;">-</span></div>
-      <div>Email: <span id="profileEmailText">-</span></div>
+    <div style="text-align:center;margin-bottom:10px;">
+      <div style="font-size:3rem;">🧑‍💻</div>
+      <h3 id="cardProfileName">User Profile</h3>
+      <span class="status-tag status-online" id="cardProfileOnline">🟢 ออนไลน์</span>
     </div>
-    <input type="text" id="newDisplayNameInput" placeholder="ใส่ชื่อใหม่ของคุณ..." maxlength="20">
-    <div class="row">
-      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('editProfileOverlay')">ยกเลิก</button>
-      <button class="btn" style="flex:1;" onclick="saveMyDisplayName()">บันทึก</button>
+
+    <!-- Friend Level & Stats Card -->
+    <div class="profile-stats-grid">
+      <div class="profile-stat-item">
+        <div class="num" id="statLevel">Lv.1</div>
+        <div class="lbl">Level (XP)</div>
+      </div>
+      <div class="profile-stat-item">
+        <div class="num" id="statMsgCount">0</div>
+        <div class="lbl">Messages</div>
+      </div>
+      <div class="profile-stat-item" style="grid-column: span 2;">
+        <div class="num" id="statReactions">🔥 0</div>
+        <div class="lbl">Reactions Received</div>
+      </div>
+    </div>
+
+    <div class="profile-info-box">
+      <div class="profile-info-item">
+        <span class="label">อีเมล (Email):</span>
+        <span class="val" id="profileEmailText">-</span>
+      </div>
+      <div class="profile-info-item">
+        <span class="label">สถานะสิทธิ์ (Role):</span>
+        <span class="val" id="profileRoleText">-</span>
+      </div>
+      <div class="profile-info-item">
+        <span class="label">รหัสอ้างอิง (UID):</span>
+        <span class="val" id="profileUidText" style="font-family:monospace;font-size:.78rem;">-</span>
+      </div>
+    </div>
+
+    <div id="selfProfileEditArea">
+      <label style="font-size:.8rem;color:#64748b;text-align:left;font-weight:600;">ชื่อเล่นแสดงผล:</label>
+      <input type="text" id="newDisplayNameInput" placeholder="ใส่ชื่อใหม่ของคุณ..." maxlength="20" style="width:100%;margin-top:4px;">
+      <div class="row" style="margin-top:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('editProfileOverlay')">ยกเลิก</button>
+        <button class="btn" style="flex:1;" onclick="saveMyDisplayName()">บันทึกชื่อ</button>
+      </div>
+      <button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</button>
+    </div>
+    <div id="otherProfileChatArea" style="display:none;margin-top:8px;">
+      <button class="btn" style="width:100%;" id="btnQuickChatFriend"><i class="fa-solid fa-paper-plane"></i> ส่งข้อความส่วนตัว</button>
     </div>
   </div>
 </div>
@@ -236,38 +347,81 @@
   </div>
 </div>
 
+<!-- NEW MODAL: สร้างโพล Realtime Poll -->
+<div class="overlay" id="createPollOverlay" style="display:none;" onclick="if(event.target===this) closeModal('createPollOverlay')">
+  <div class="card">
+    <button class="close-x" onclick="closeModal('createPollOverlay')">&times;</button>
+    <h3>📊 สร้างโพลสำรวจแบบ Realtime</h3>
+    <input type="text" id="pollQuestionInput" placeholder="คำถามโพล..." maxlength="100">
+    <input type="text" class="poll-opt-input" placeholder="ตัวเลือกที่ 1">
+    <input type="text" class="poll-opt-input" placeholder="ตัวเลือกที่ 2">
+    <input type="text" class="poll-opt-input" placeholder="ตัวเลือกที่ 3 (ไม่บังคับ)">
+    <div class="row" style="margin-top:6px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('createPollOverlay')">ยกเลิก</button>
+      <button class="btn" style="flex:1;" onclick="submitCreatePoll()">สร้างโพล</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW MODAL: คลังสื่อ/ไฟล์ Media Library -->
+<div class="overlay" id="mediaLibraryOverlay" style="display:none;" onclick="if(event.target===this) closeModal('mediaLibraryOverlay')">
+  <div class="card" style="width:450px;max-width:95vw;text-align:left;">
+    <button class="close-x" onclick="closeModal('mediaLibraryOverlay')">&times;</button>
+    <h3 style="color:var(--primary-dark);margin-bottom:12px;">📁 Media & Link Library</h3>
+    <div id="mediaLibraryContent" style="font-size:.85rem;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- NEW MODAL: Activity Feed กิจกรรมเพื่อน -->
+<div class="overlay" id="activityFeedOverlay" style="display:none;" onclick="if(event.target===this) closeModal('activityFeedOverlay')">
+  <div class="card" style="width:450px;max-width:95vw;text-align:left;">
+    <button class="close-x" onclick="closeModal('activityFeedOverlay')">&times;</button>
+    <h3 style="color:var(--primary-dark);margin-bottom:12px;">🎮 กิจกรรมกลุ่มเพื่อน</h3>
+    <div id="activityFeedContent" style="font-size:.85rem;display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- ห้องแชทหลัก -->
 <div class="chat-container" id="chatContainer" style="display:none;">
   <div class="chat-header">
     <div>
-      <div class="title" id="chatTitleHeader">Classroom Cloud Chat</div>
-      <div class="sub">ห้องเรียนออนไลน์ • Realtime Chat & Hub</div>
+      <div class="title" id="chatTitleHeader">FriendHub Cloud Chat</div>
+      <div class="sub">Private Friend Network • Realtime Social Hub</div>
     </div>
     <div class="online-badge"><span class="online-dot"></span><span id="onlineCount">0</span> ออนไลน์</div>
   </div>
   <div class="pinned-banner" id="pinnedBanner"></div>
+
+  <!-- NEW: Friends List Bar -->
+  <div class="friends-bar" id="friendsBarContainer">
+    <span style="font-size:.75rem;font-weight:700;color:#64748b;">🟢 เพื่อนออนไลน์:</span>
+    <div id="friendsListPills" style="display:flex;gap:6px;"></div>
+  </div>
 
   <!-- Shortcuts Menu Bar -->
   <div class="shortcuts-bar" id="shortcutsBarContainer"></div>
 
   <!-- Control Bar -->
   <div class="control-bar">
-    <span class="user-tag" id="myNicknameTag" onclick="openEditProfile()" title="คลิกเพื่อเปลี่ยนชื่อ">-</span>
+    <span class="user-tag" id="myNicknameTag" onclick="openEditProfile()" title="คลิกเพื่อดูโปรไฟล์/เปลี่ยนชื่อ">-</span>
     
     <select id="chatMode" onchange="handleChatModeChange()">
       <optgroup label="💬 แชทหลัก">
         <option value="group">💬 แชทรวม (สาธารณะ)</option>
-        <option value="private">🔒 แชทเดี่ยว (ส่วนตัว)</option>
+        <option value="private">🔒 แชทเดี่ยว (ส่วนตัว) <span id="unreadPrivateBadge"></span></option>
       </optgroup>
       <optgroup label="👥 กลุ่มที่ฉันอยู่" id="customGroupOptGroup">
       </optgroup>
     </select>
 
     <select id="targetUserSelect" style="display:none;" onchange="handleChatModeChange()">
-      <option value="">-- เลือกผู้รับ --</option>
+      <option value="">-- เลือกเพื่อน --</option>
     </select>
 
-    <button class="icon-btn" onclick="openCreateGroupModal()" style="background:#eef2ff;color:var(--primary-dark);border-color:#d0d9ff;"><i class="fa-solid fa-users-between-lines"></i> ➕ สร้างกลุ่ม</button>
+    <button class="icon-btn" onclick="openCreateGroupModal()" style="background:#eef2ff;color:var(--primary-dark);border-color:#d0d9ff;"><i class="fa-solid fa-users-between-lines"></i> ➕ กลุ่ม</button>
+    <button class="icon-btn" onclick="openModal('createPollOverlay')"><i class="fa-solid fa-chart-simple"></i> โพล</button>
+    <button class="icon-btn" onclick="openMediaLibrary()"><i class="fa-solid fa-folder-open"></i> คลังสื่อ</button>
+    <button class="icon-btn" onclick="openActivityFeed()"><i class="fa-solid fa-gamepad"></i> กิจกรรม</button>
     <button class="icon-btn" onclick="openModal('reportOverlay')"><i class="fa-solid fa-bug"></i> รายงาน</button>
     <button class="icon-btn admin-pill" id="adminPanelBtn" style="display:none;" onclick="openFullAdminCenter()"><i class="fa-solid fa-screwdriver-wrench"></i> Admin<span class="notif-badge" id="reportBadge" style="display:none;">0</span></button>
   </div>
@@ -279,11 +433,19 @@
 
   <div class="chat-messages" id="chatBox"></div>
 
+  <!-- Typing Indicator Bar -->
+  <div class="typing-indicator" id="typingIndicator"></div>
+
+  <!-- แถบแสดงพรีวิวการกดตอบกลับ (Reply) -->
+  <div class="reply-preview-bar" id="replyPreviewBar">
+    <span id="replyPreviewText">กำลังตอบกลับ...</span>
+    <button style="background:none;border:none;cursor:pointer;" onclick="cancelReply()">&times;</button>
+  </div>
+
+  <!-- ช่องพิมพ์ข้อความ -->
   <div class="chat-input">
-    <label for="fileInput" class="file-label">📎</label>
-    <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect()">
-    <span class="selected-file" id="selectedFileLabel"></span>
-    <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter'){sendMessage();}">
+    <button class="icon-btn" id="qaToggleBtn" onclick="toggleQAMode()" title="ส่งเป็นคำถาม (Q&A Mode)"><i class="fa-solid fa-circle-question"></i></button>
+    <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ... (ใช้ **ข้อความ** เพื่อตัวหนา หรือ ```โค้ด```)" oninput="handleTypingEvent()" onkeypress="if(event.key==='Enter'){sendMessage();}">
     <button class="btn" id="sendBtn" onclick="sendMessage()">ส่ง</button>
   </div>
 </div>
@@ -297,6 +459,7 @@
     </div>
     <div class="admin-nav">
       <div class="admin-nav-item active" onclick="switchAdminTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</div>
+      <div class="admin-nav-item" onclick="switchAdminTab('whitelist', this)"><i class="fa-solid fa-user-lock"></i> Friend Whitelist</div>
       <div class="admin-nav-item" onclick="switchAdminTab('users', this)"><i class="fa-solid fa-users"></i> Users</div>
       <div class="admin-nav-item" onclick="switchAdminTab('bans', this)"><i class="fa-solid fa-ban"></i> Bans</div>
       <div class="admin-nav-item" onclick="switchAdminTab('chat', this)"><i class="fa-solid fa-comments"></i> Chat</div>
@@ -343,36 +506,48 @@ const firebaseConfig = {
   databaseURL: "https://kkkk-c0436-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
-const ADMIN_PASSWORD = "admin1234"; 
+const ADMIN_EMAIL = "stu69319011814@lannapoly.ac.th";
 
-var myName = '', myUid = '', myEmail = 'ไม่มีข้อมูล', isAdmin = false;
-var selectedFile = null, onlineUsersCache = {}, allUsersCache = {}, reportsCache = {}, shortcutsCache = {};
-var customGroupsCache = {}; 
-var systemSettings = { allowNameChange: true, allowFileUpload: true, maintenanceMode: false, maxFileSizeMB: 10 }; 
-var db = null, storage = null, auth = null;
+var myName = '', myUid = '', myEmail = '', isAdmin = false;
+var onlineUsersCache = {}, allUsersCache = {}, reportsCache = {}, shortcutsCache = {};
+var customGroupsCache = {}, allMessagesCache = {}, whitelistCache = {}; 
+var systemSettings = { allowNameChange: true, maintenanceMode: false, readOnlyMode: false, slowModeSeconds: 0, profanityFilter: true, privateAccessOnly: false }; 
+var db = null, auth = null;
 var currentAdminTab = 'dashboard';
-var activeListeners = {}; // ป้องกัน Memory Leak
+var activeListeners = {}; 
+
+// State Variables
+var replyTargetMessage = null;
+var isQAMode = false;
+var lastSentTime = 0;
+var typingTimeout = null;
+var unreadCounts = { group: 0, private: {} };
+var badWordsList = ["ควย", "ส้นตีน", "เหี้ย", "มึง", "กู", "เย็ด", "สัส"];
 
 var systemDiagnostics = {
   auth: { status: 'ok', name: 'Firebase Auth', msg: 'Working' },
   rtdb: { status: 'ok', name: 'Realtime Database', msg: 'Working' },
-  storage: { status: 'ok', name: 'Firebase Storage', msg: 'Working' },
   chat: { status: 'ok', name: 'Chat System', msg: 'Working' },
   privateChat: { status: 'ok', name: 'Private Chat', msg: 'Working' },
-  fileUpload: { status: 'ok', name: 'File Upload', msg: 'Working' },
   reports: { status: 'ok', name: 'Report System', msg: 'Working' }
 };
 
 try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.database();
-  storage = firebase.storage();
   auth = firebase.auth();
 } catch (err) {
   console.error('Firebase Init Error:', err.message);
   systemDiagnostics.rtdb.status = 'error';
   systemDiagnostics.rtdb.msg = err.message;
 }
+
+// ตรวจสอบ Auto-login หากเคยล็อกอินค้างไว้
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    handleUserSession(user);
+  }
+});
 
 function logSystemError(type, message) {
   if (!myUid && type.includes('Auth Error')) return; 
@@ -409,6 +584,10 @@ document.addEventListener('keydown', function(event) {
     closeModal('manageGroupOverlay');
     closeModal('editProfileOverlay');
     closeModal('userHistoryOverlay');
+    closeModal('createPollOverlay');
+    closeModal('mediaLibraryOverlay');
+    closeModal('activityFeedOverlay');
+    cancelReply();
   }
 });
 
@@ -431,72 +610,117 @@ function escapeHtml(str){
   return str ? String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
 }
 
-function toggleAdminField(){
-  const el = document.getElementById('adminPassInput');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
+// ระบบ Formatting ขั้นสูง (Code Block / Bold / Italic / Links)
+function parseFormattedText(text) {
+  if (!text) return '';
+  let str = escapeHtml(text);
 
-async function login(){
-  const name = document.getElementById('nicknameInput').value.trim();
-  const adminPass = document.getElementById('adminPassInput').value;
-
-  if (!name) return alert('กรุณาใส่ชื่อเล่น');
-  if (document.getElementById('adminPassInput').style.display !== 'none' && adminPass){
-    if (adminPass !== ADMIN_PASSWORD) return alert('รหัสแอดมินไม่ถูกต้อง');
-    isAdmin = true;
+  if (systemSettings.profanityFilter) {
+    badWordsList.forEach(word => {
+      const reg = new RegExp(word, 'gi');
+      str = str.replace(reg, '***');
+    });
   }
 
-  try {
-    const userCredential = await auth.signInAnonymously();
-    myUid = userCredential.user.uid;
-    myName = name;
-    myEmail = userCredential.user.email || 'ไม่มีข้อมูล';
+  str = str.replace(/```([^`]+)```/g, '<code-block>$1</code-block>');
+  str = str.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  str = str.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  return str.replace(urlRegex, function(url) {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+}
+
+// เข้าสู่ระบบ Google กดคลิกเดียว
+async function loginWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    const result = await auth.signInWithPopup(provider);
+    handleUserSession(result.user);
+  } catch (error) {
+    logSystemError('Google Login Failed', error.message);
+    alert('ไม่สามารถเข้าสู่ระบบผ่าน Google ได้: ' + error.message);
+  }
+}
+
+async function handleUserSession(user) {
+  myUid = user.uid;
+  myEmail = (user.email || '').toLowerCase();
+
+  // ตรวจสอบสิทธิ์ Private Whitelist Access
+  const settingsSnap = await db.ref('settings/system').once('value');
+  const sysConfig = settingsSnap.val() || {};
+
+  if (sysConfig.privateAccessOnly && myEmail !== ADMIN_EMAIL) {
+    const wlSnap = await db.ref('whitelist').once('value');
+    const wlData = wlSnap.val() || {};
+    const isWhitelisted = Object.values(wlData).some(item => (item.email || '').toLowerCase() === myEmail);
+
+    if (!isWhitelisted) {
+      alert('🔐 ระบบนี้เปิดใช้งานโหมด "เฉพาะเพื่อนที่ได้รับอนุญาตเท่านั้น"\nบัญชีของคุณไม่ได้รับสิทธิ์เข้าใช้งาน');
+      auth.signOut();
+      return;
+    }
+  }
+
+  // ตรวจสอบสถานะการถูกแบน (ยกเว้น ADMIN_EMAIL ป้องกันโดนแบน)
+  if (myEmail !== ADMIN_EMAIL) {
     const banSnap = await db.ref('bans/' + myUid).once('value');
     if (banSnap.exists()) {
       const banData = banSnap.val();
       alert(`🚫 คุณถูกแบนจากการใช้งานระบบ\nเหตุผล: ${banData.reason || 'ไม่ระบุ'}`);
+      auth.signOut();
       return;
     }
+  }
 
-    const userRef = db.ref('users/' + myUid);
-    const existingSnap = await userRef.once('value');
-    const existingData = existingSnap.val() || {};
+  const userRef = db.ref('users/' + myUid);
+  const existingSnap = await userRef.once('value');
+  const existingData = existingSnap.val() || {};
 
-    if (existingData.admin === true) {
-      isAdmin = true;
+  myName = existingData.name || user.displayName || user.email.split('@')[0];
+  isAdmin = (myEmail === ADMIN_EMAIL) || existingData.admin === true;
+
+  const userData = {
+    uid: myUid,
+    name: myName,
+    email: myEmail,
+    createdAt: existingData.createdAt || new Date().toLocaleDateString('th-TH'),
+    status: 'normal',
+    online: true,
+    admin: isAdmin,
+    isSuperAdmin: (myEmail === ADMIN_EMAIL),
+    lastLogin: new Date().toLocaleString('th-TH'),
+    msgCount: existingData.msgCount || 0,
+    reactionsReceived: existingData.reactionsReceived || 0
+  };
+
+  await userRef.set(userData);
+  userRef.child('online').onDisconnect().set(false);
+
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('chatContainer').style.display = 'flex';
+  document.getElementById('myNicknameTag').textContent = myName + (myEmail === ADMIN_EMAIL ? ' 👑' : (isAdmin ? ' 🛠' : ''));
+  if (isAdmin) document.getElementById('adminPanelBtn').style.display = 'inline-flex';
+
+  db.ref(`userHistory/${myUid}/loginHistory`).push(new Date().toLocaleString('th-TH'));
+  logActivity(myName, myUid, 'User Login', `เข้าสู่ระบบแชท (${myEmail})`);
+
+  initRealtimeListeners();
+}
+
+function logout() {
+  if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+    if (myUid) {
+      db.ref(`users/${myUid}/online`).set(false);
     }
-
-    const userData = {
-      uid: myUid,
-      name: myName,
-      email: myEmail,
-      createdAt: existingData.createdAt || new Date().toLocaleDateString('th-TH'),
-      status: 'normal',
-      online: true,
-      admin: isAdmin,
-      lastLogin: new Date().toLocaleString('th-TH')
-    };
-
-    await userRef.set(userData);
-    userRef.child('online').onDisconnect().set(false);
-
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('chatContainer').style.display = 'flex';
-    document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
-    if (isAdmin) document.getElementById('adminPanelBtn').style.display = 'inline-flex';
-
-    db.ref(`userHistory/${myUid}/loginHistory`).push(new Date().toLocaleString('th-TH'));
-    logActivity(myName, myUid, 'User Login', 'เข้าสู่ระบบแชท');
-
-    initRealtimeListeners();
-  } catch (error) {
-    logSystemError('Login Failed', error.message);
-    alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
+    auth.signOut().then(() => {
+      location.reload();
+    });
   }
 }
 
-// ล้าง Event Listener เก่า ป้องกัน Memory Leak
 function detachListeners() {
   Object.keys(activeListeners).forEach(path => {
     db.ref(path).off();
@@ -511,14 +735,37 @@ function initRealtimeListeners(){
   activeListeners['users/' + myUid] = true;
   userRef.on('value', (snap) => {
     if (!snap.exists()) {
+      if (myEmail === ADMIN_EMAIL) {
+        // บังคับสร้างสิทธิ์ Super Admin คืนทันทีหากโดนลบ
+        userRef.set({
+          uid: myUid,
+          name: myName || 'SuperAdmin',
+          email: myEmail,
+          createdAt: new Date().toLocaleDateString('th-TH'),
+          status: 'normal',
+          online: true,
+          admin: true,
+          isSuperAdmin: true,
+          lastLogin: new Date().toLocaleString('th-TH')
+        });
+        return;
+      }
       alert('คุณถูก Admin เตะออกจากระบบ');
       location.reload();
       return;
     }
     const val = snap.val();
-    if (val && val.admin !== undefined) {
-      isAdmin = val.admin;
-      document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+    if (val) {
+      if (myEmail === ADMIN_EMAIL) {
+        isAdmin = true;
+        if (!val.admin || !val.isSuperAdmin) {
+          userRef.child('admin').set(true);
+          userRef.child('isSuperAdmin').set(true);
+        }
+      } else if (val.admin !== undefined) {
+        isAdmin = val.admin || false;
+      }
+      document.getElementById('myNicknameTag').textContent = myName + (myEmail === ADMIN_EMAIL ? ' 👑' : (isAdmin ? ' 🛠' : ''));
       document.getElementById('adminPanelBtn').style.display = isAdmin ? 'inline-flex' : 'none';
     }
   });
@@ -527,6 +774,11 @@ function initRealtimeListeners(){
   activeListeners['bans/' + myUid] = true;
   banRef.on('value', (snap) => {
     if (snap.exists()) {
+      if (myEmail === ADMIN_EMAIL) {
+        // ปลดแบนอัตโนมัติถ้าเป็น Super Admin
+        banRef.remove();
+        return;
+      }
       alert('🚫 บัญชีของคุณถูกแบนโดย Admin');
       location.reload();
     }
@@ -542,6 +794,8 @@ function initRealtimeListeners(){
     });
 
     renderTargetSelect(onlineUsersCache);
+    renderFriendsListBar(onlineUsersCache);
+
     const count = Object.keys(onlineUsersCache).length;
     document.getElementById('onlineCount').textContent = count;
 
@@ -557,11 +811,43 @@ function initRealtimeListeners(){
     handleChatModeChange();
   });
 
-  // ใช้ Limit to Last 100 ข้อความ ป้องกันข้อความสะสมหน่วงเครื่อง
   const msgRef = db.ref('messages').orderByChild('ts').limitToLast(100);
   activeListeners['messages'] = true;
+  msgRef.on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.senderUid !== myUid) {
+      // Notification System
+      const currentMode = document.getElementById('chatMode').value;
+      if (data.mode === 'private' && data.targetUid === myUid && currentMode !== 'private') {
+        showToast(`🔔 ข้อความใหม่จาก ${data.sender}: "${data.text ? data.text.substring(0, 20) : 'สื่อ'}"`);
+      }
+    }
+  });
+
   msgRef.on('value', (snapshot) => {
-    renderFilteredMessages(snapshot.val() || {});
+    allMessagesCache = snapshot.val() || {};
+    renderFilteredMessages(allMessagesCache);
+  });
+
+  // Typing Indicator Listener
+  const typingRef = db.ref('typing');
+  activeListeners['typing'] = true;
+  typingRef.on('value', (snapshot) => {
+    const typingData = snapshot.val() || {};
+    const typers = [];
+    Object.keys(typingData).forEach(uid => {
+      if (uid !== myUid && typingData[uid].isTyping) {
+        typers.push(typingData[uid].name);
+      }
+    });
+
+    const el = document.getElementById('typingIndicator');
+    if (typers.length > 0) {
+      el.textContent = `👀 ${typers.join(', ')} กำลังพิมพ์...`;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
   });
 
   const settingsRef = db.ref('settings');
@@ -586,6 +872,13 @@ function initRealtimeListeners(){
     if (isAdmin && currentAdminTab === 'shortcuts') renderAdminShortcutsSection();
   });
 
+  const whitelistRef = db.ref('whitelist');
+  activeListeners['whitelist'] = true;
+  whitelistRef.on('value', (snapshot) => {
+    whitelistCache = snapshot.val() || {};
+    if (isAdmin && currentAdminTab === 'whitelist') renderAdminWhitelistSection();
+  });
+
   if (isAdmin){
     const reportsRef = db.ref('reports');
     activeListeners['reports'] = true;
@@ -598,15 +891,29 @@ function initRealtimeListeners(){
   }
 }
 
+function renderFriendsListBar(onlineUsers) {
+  const container = document.getElementById('friendsListPills');
+  container.innerHTML = '';
+  Object.values(onlineUsers).forEach(u => {
+    if (u.uid !== myUid) {
+      const pill = document.createElement('div');
+      pill.className = 'friend-pill';
+      pill.innerHTML = `🟢 ${escapeHtml(u.name)}`;
+      pill.onclick = () => inspectUserProfile(u.uid);
+      container.appendChild(pill);
+    }
+  });
+}
+
 function renderTargetSelect(users){
   const select = document.getElementById('targetUserSelect');
   const current = select.value;
-  select.innerHTML = '<option value="">-- เลือกผู้รับ --</option>';
+  select.innerHTML = '<option value="">-- เลือกเพื่อน --</option>';
   Object.values(users).forEach(u => {
     if (u.uid !== myUid) {
       const opt = document.createElement('option');
       opt.value = u.uid;
-      opt.textContent = u.name + (u.admin ? ' 🛠' : '');
+      opt.textContent = u.name + (u.email === ADMIN_EMAIL ? ' 👑' : (u.admin ? ' 🛠' : ' 👤'));
       select.appendChild(opt);
     }
   });
@@ -702,7 +1009,7 @@ function createMessageNode(key, data, isMine) {
 
   if (data.system) {
     msgDiv.className = 'message system';
-    msgDiv.textContent = '📣 ' + data.text;
+    msgDiv.innerHTML = '📣 ' + parseFormattedText(data.text);
     return msgDiv;
   }
 
@@ -711,17 +1018,276 @@ function createMessageNode(key, data, isMine) {
   if (data.mode === 'private') modeBadge = '🔒 ส่วนตัว';
   else if (data.mode && data.mode.startsWith('custom_')) modeBadge = '👥 กลุ่มย่อย';
 
-  const adminBadge = data.isAdmin ? '<span class="badge-tiny">แอดมิน</span>' : '';
+  const roleBadge = data.isSuperAdmin
+    ? '<span class="badge-tiny badge-role-owner">👑 เจ้าของระบบ</span>'
+    : (data.isAdmin 
+      ? '<span class="badge-tiny badge-role-admin">🛠️ แอดมิน</span>' 
+      : '<span class="badge-tiny badge-role-friend">👤 เพื่อน</span>');
+
   const canDelete = isMine || isAdmin;
   const delBtnHtml = canDelete ? `<button class="del-btn" onclick="deleteMessage('${key}')"><i class="fa-solid fa-trash"></i></button>` : '';
+  const pinBtnHtml = `<button class="action-btn" title="ปักหมุด" onclick="pinMessage('${key}')"><i class="fa-solid fa-thumbtack"></i></button>`;
+  const replyBtnHtml = `<button class="action-btn" onclick="initiateReply('${key}', '${escapeHtml(data.sender)}', '${escapeHtml(data.text)}')"><i class="fa-solid fa-reply"></i></button>`;
 
-  let html = `<div class="meta"><span>${escapeHtml(data.sender)}${adminBadge} · ${modeBadge}</span><span>${escapeHtml(data.time)}${delBtnHtml}</span></div>`;
-  if (data.text) html += `<div>${escapeHtml(data.text)}</div>`;
-  if (data.file) {
-    html += `<div style="margin-top:5px;">📁 <a href="${escapeHtml(data.file.url)}" download target="_blank">${escapeHtml(data.file.name)}</a></div>`;
+  let html = `<div class="meta"><span style="cursor:pointer;" onclick="inspectUserProfile('${data.senderUid}')"><strong>${escapeHtml(data.sender)}</strong> ${roleBadge}</span><span>${escapeHtml(data.time)} ${pinBtnHtml} ${replyBtnHtml} ${delBtnHtml}</span></div>`;
+  
+  if (data.replyTo) {
+    html += `<div class="quote-box"><strong>${escapeHtml(data.replyTo.sender)}:</strong> ${parseFormattedText(data.replyTo.text)}</div>`;
   }
+
+  if (data.isQA) {
+    const isAnswered = data.qaAnswered;
+    html += `
+      <div class="qa-card ${isAnswered ? 'answered' : ''}">
+        <div style="font-weight:bold;font-size:.85rem;">❓ คำถาม Q&A ${isAnswered ? '✅ (ตอบแล้ว)' : '⏳ (รอคำตอบ)'}</div>
+        <div>${parseFormattedText(data.text)}</div>
+        ${!isAnswered && (isAdmin || isMine) ? `<button class="btn btn-sm" style="margin-top:6px;background:#10b981;" onclick="markQAAnswered('${key}')">Mark as Answered</button>` : ''}
+      </div>
+    `;
+  } 
+  else if (data.isPoll && data.pollData) {
+    const poll = data.pollData;
+    let pollOptionsHtml = '';
+    const totalVotes = Object.keys(poll.votes || {}).length;
+
+    poll.options.forEach((opt, idx) => {
+      let optVotes = 0;
+      if (poll.votes) {
+        Object.values(poll.votes).forEach(v => { if (v === idx) optVotes++; });
+      }
+      const pct = totalVotes > 0 ? Math.round((optVotes / totalVotes) * 100) : 0;
+      pollOptionsHtml += `
+        <div class="poll-option" onclick="votePoll('${key}', ${idx})">
+          <span>${escapeHtml(opt)}</span>
+          <strong>${optVotes} เสียง (${pct}%)</strong>
+        </div>
+      `;
+    });
+
+    html += `
+      <div class="poll-card">
+        <div style="font-weight:bold;font-size:.9rem;color:var(--primary-dark);">📊 ${escapeHtml(poll.question)}</div>
+        ${pollOptionsHtml}
+        <div style="font-size:.72rem;color:#64748b;margin-top:4px;">รวมทั้งหมด ${totalVotes} โหวต</div>
+      </div>
+    `;
+  } 
+  else if (data.text) {
+    html += `<div>${parseFormattedText(data.text)}</div>`;
+  }
+
+  // Reactions Container
+  let reactionsHtml = '<div class="reactions-bar">';
+  if (data.reactions) {
+    const counts = {};
+    Object.values(data.reactions).forEach(e => { counts[e] = (counts[e] || 0) + 1; });
+    Object.keys(counts).forEach(e => {
+      reactionsHtml += `<span class="reaction-chip" onclick="addReaction('${key}', '${e}')">${e} ${counts[e]}</span>`;
+    });
+  }
+  reactionsHtml += `<button class="action-btn" onclick="toggleReactionPicker('${key}')"><i class="fa-regular fa-face-smile"></i></button>`;
+  
+  // Picker popup
+  reactionsHtml += `
+    <div class="reaction-picker" id="picker_${key}">
+      <span onclick="addReaction('${key}', '👍')">👍</span>
+      <span onclick="addReaction('${key}', '❤️')">❤️</span>
+      <span onclick="addReaction('${key}', '😂')">😂</span>
+      <span onclick="addReaction('${key}', '😮')">😮</span>
+      <span onclick="addReaction('${key}', '😢')">😢</span>
+      <span onclick="addReaction('${key}', '🔥')">🔥</span>
+    </div>
+  `;
+  reactionsHtml += '</div>';
+
+  html += reactionsHtml;
   msgDiv.innerHTML = html;
   return msgDiv;
+}
+
+// Reactions Functionality
+function toggleReactionPicker(key) {
+  const picker = document.getElementById(`picker_${key}`);
+  if (picker) {
+    picker.style.display = picker.style.display === 'flex' ? 'none' : 'flex';
+  }
+}
+
+function addReaction(msgKey, emoji) {
+  db.ref(`messages/${msgKey}/reactions/${myUid}`).set(emoji).then(() => {
+    const msg = allMessagesCache[msgKey];
+    if (msg && msg.senderUid && msg.senderUid !== myUid) {
+      db.ref(`users/${msg.senderUid}/reactionsReceived`).transaction(count => (count || 0) + 1);
+    }
+  });
+}
+
+function pinMessage(msgKey) {
+  const msg = allMessagesCache[msgKey];
+  if (msg) {
+    db.ref('settings/banner').set(`${msg.sender}: ${msg.text || 'ข้อความปักหมุด'}`).then(() => {
+      showToast('ปักหมุดข้อความเรียบร้อยแล้ว');
+    });
+  }
+}
+
+function handleTypingEvent() {
+  if (!myUid) return;
+  db.ref(`typing/${myUid}`).set({ isTyping: true, name: myName });
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    db.ref(`typing/${myUid}`).remove();
+  }, 2000);
+}
+
+// Profile Inspector
+async function inspectUserProfile(targetUid) {
+  const user = allUsersCache[targetUid] || { name: 'Unknown User', uid: targetUid };
+  const userSnap = await db.ref(`users/${targetUid}`).once('value');
+  const uData = userSnap.val() || {};
+
+  document.getElementById('cardProfileName').textContent = uData.name || user.name;
+  document.getElementById('cardProfileOnline').className = `status-tag ${uData.online ? 'status-online' : 'status-offline'}`;
+  document.getElementById('cardProfileOnline').textContent = uData.online ? '🟢 ออนไลน์' : '⚪ ออฟไลน์';
+
+  // XP & Level calculation
+  const msgCount = uData.msgCount || 0;
+  const reactions = uData.reactionsReceived || 0;
+  const xp = (msgCount * 10) + (reactions * 25);
+  const level = Math.floor(xp / 100) + 1;
+
+  document.getElementById('statLevel').textContent = `Lv.${level}`;
+  document.getElementById('statMsgCount').textContent = msgCount;
+  document.getElementById('statReactions').textContent = `🔥 ${reactions}`;
+
+  document.getElementById('profileUidText').textContent = uData.uid || targetUid;
+  document.getElementById('profileEmailText').textContent = uData.email || '-';
+  
+  const roleText = (uData.email === ADMIN_EMAIL || uData.isSuperAdmin) 
+    ? '👑 เจ้าของระบบสูงสุด (Super Admin)' 
+    : (uData.admin ? '🛠️ ผู้ดูแลระบบ' : '👤 เพื่อน');
+    
+  document.getElementById('profileRoleText').textContent = roleText;
+
+  if (targetUid === myUid) {
+    document.getElementById('selfProfileEditArea').style.display = 'block';
+    document.getElementById('otherProfileChatArea').style.display = 'none';
+  } else {
+    document.getElementById('selfProfileEditArea').style.display = 'none';
+    document.getElementById('otherProfileChatArea').style.display = 'block';
+    document.getElementById('btnQuickChatFriend').onclick = () => {
+      closeModal('editProfileOverlay');
+      document.getElementById('chatMode').value = 'private';
+      document.getElementById('targetUserSelect').value = targetUid;
+      handleChatModeChange();
+    };
+  }
+
+  openModal('editProfileOverlay');
+}
+
+// Activity Feed Modal
+function openActivityFeed() {
+  const content = document.getElementById('activityFeedContent');
+  content.innerHTML = 'กำลังโหลด...';
+
+  db.ref('activities').limitToLast(15).once('value', snap => {
+    if (!snap.exists()) { content.innerHTML = '<p style="color:#888;">ไม่มีกิจกรรมล่าสุด</p>'; return; }
+    let html = '';
+    const logs = [];
+    snap.forEach(c => logs.unshift(c.val()));
+    logs.forEach(l => {
+      html += `
+        <div style="background:#f8fafc;padding:10px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-weight:700;color:var(--primary-dark);">${escapeHtml(l.actor)}</div>
+          <div style="font-size:.85rem;color:#334155;">${escapeHtml(l.action)} - ${escapeHtml(l.details)}</div>
+          <div style="font-size:.72rem;color:#94a3b8;margin-top:4px;">${escapeHtml(l.time)}</div>
+        </div>
+      `;
+    });
+    content.innerHTML = html;
+  });
+
+  openModal('activityFeedOverlay');
+}
+
+// ระบบ Reply ข้อความ
+function initiateReply(msgKey, sender, text) {
+  replyTargetMessage = { key: msgKey, sender: sender, text: text };
+  document.getElementById('replyPreviewText').textContent = `กำลังตอบกลับคุณ ${sender}: "${text.substring(0, 30)}..."`;
+  document.getElementById('replyPreviewBar').style.display = 'flex';
+}
+
+function cancelReply() {
+  replyTargetMessage = null;
+  document.getElementById('replyPreviewBar').style.display = 'none';
+}
+
+function toggleQAMode() {
+  isQAMode = !isQAMode;
+  const btn = document.getElementById('qaToggleBtn');
+  btn.style.color = isQAMode ? 'var(--primary)' : '#555';
+  showToast(isQAMode ? 'เปิดโหมดถาม-ตอบ (Q&A)' : 'ปิดโหมดถาม-ตอบ');
+}
+
+function markQAAnswered(msgKey) {
+  db.ref(`messages/${msgKey}/qaAnswered`).set(true).then(() => showToast('ทำเครื่องหมายว่าตอบแล้ว'));
+}
+
+function submitCreatePoll() {
+  const q = document.getElementById('pollQuestionInput').value.trim();
+  const optInputs = document.querySelectorAll('.poll-opt-input');
+  const opts = [];
+  optInputs.forEach(i => { if (i.value.trim()) opts.push(i.value.trim()); });
+
+  if (!q || opts.length < 2) return alert('กรุณาใส่คำถามและตัวเลือกอย่างน้อย 2 ข้อ');
+
+  const mode = document.getElementById('chatMode').value;
+  db.ref('messages').push({
+    sender: myName,
+    senderUid: myUid,
+    isAdmin: isAdmin,
+    isSuperAdmin: (myEmail === ADMIN_EMAIL),
+    isPoll: true,
+    pollData: { question: q, options: opts, votes: {} },
+    mode: mode,
+    targetUid: mode === 'private' ? document.getElementById('targetUserSelect').value : null,
+    time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+    ts: Date.now()
+  }).then(() => {
+    logActivity(myName, myUid, 'Create Poll', q);
+    closeModal('createPollOverlay');
+    showToast('สร้างโพลเรียบร้อยแล้ว');
+  });
+}
+
+function votePoll(msgKey, optionIdx) {
+  db.ref(`messages/${msgKey}/pollData/votes/${myUid}`).set(optionIdx).then(() => {
+    showToast('บันทึกการลงคะแนนเรียบร้อย');
+  });
+}
+
+function openMediaLibrary() {
+  const content = document.getElementById('mediaLibraryContent');
+  content.innerHTML = '';
+  let count = 0;
+
+  Object.values(allMessagesCache).forEach(msg => {
+    if (msg.text && (msg.text.includes('http://') || msg.text.includes('https://'))) {
+      count++;
+      const item = document.createElement('div');
+      item.style = 'padding:8px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;';
+      item.innerHTML = `
+        <div style="font-size:.75rem;color:#64748b;">${escapeHtml(msg.sender)} • ${escapeHtml(msg.time)}</div>
+        <div>${parseFormattedText(msg.text)}</div>
+      `;
+      content.appendChild(item);
+    }
+  });
+
+  if (count === 0) content.innerHTML = '<div style="color:#888;">ไม่พบลับลิงก์หรือไฟล์ในประวัติแชท</div>';
+  openModal('mediaLibraryOverlay');
 }
 
 function openCreateGroupModal(){
@@ -807,6 +1373,10 @@ function saveGroupName(){
 }
 
 function kickMemberFromGroup(groupId, memberUid){
+  const targetUser = allUsersCache[memberUid];
+  if (targetUser && targetUser.email === ADMIN_EMAIL) {
+    return alert('🚫 ไม่สามารถเตะเจ้าของระบบสูงสุดออกได้');
+  }
   if (confirm('ต้องการเตะสมาชิกท่านนี้ออกจากกลุ่มใช่หรือไม่?')){
     db.ref(`customGroups/${groupId}/members/${memberUid}`).remove().then(() => {
       showToast('เตะออกจากกลุ่มแล้ว');
@@ -828,71 +1398,54 @@ function deleteCurrentGroup(){
   }
 }
 
-function handleFileSelect(){
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  const maxBytes = (systemSettings.maxFileSizeMB || 10) * 1024 * 1024;
-  if (file.size > maxBytes) {
-    alert(`กรุณาเลือกไฟล์ขนาดไม่เกิน ${systemSettings.maxFileSizeMB || 10}MB`);
-    fileInput.value = '';
-    return;
-  }
-  selectedFile = file;
-  document.getElementById('selectedFileLabel').textContent = '📁 ' + file.name;
-}
-
-// ปรับปรุงระบบส่งข้อความ & อัปโหลดไฟล์ Firebase Storage พร้อม Fallback
 async function sendMessage(){
-  if (!systemSettings.allowFileUpload && selectedFile) {
-    alert('⚠️ การแนบไฟล์ถูกปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ');
-    return;
-  }
-
   const input = document.getElementById('messageInput');
   const msgText = input.value.trim();
   const mode = document.getElementById('chatMode').value;
   const targetUid = document.getElementById('targetUserSelect').value;
   const sendBtn = document.getElementById('sendBtn');
 
-  if (mode === 'private' && !targetUid) return alert('กรุณาเลือกผู้รับแชทเดี่ยว');
-  if (!msgText && !selectedFile) return;
+  if (systemSettings.readOnlyMode && !isAdmin && mode === 'group') {
+    return alert('⚠️ แอดมินตั้งค่าโหมดอ่านอย่างเดียวเฉพาะช่องทางหลัก');
+  }
+
+  if (systemSettings.slowModeSeconds > 0 && !isAdmin) {
+    const now = Date.now();
+    const diff = (now - lastSentTime) / 1000;
+    if (diff < systemSettings.slowModeSeconds) {
+      return alert(`⏳ ระบบเปิด Slow Mode กรุณารออีก ${Math.ceil(systemSettings.slowModeSeconds - diff)} วินาที`);
+    }
+  }
+
+  if (mode === 'private' && !targetUid) return alert('กรุณาเลือกเพื่อนผู้รับแชทเดี่ยว');
+  if (!msgText) return;
 
   sendBtn.disabled = true;
-  let fileData = null;
 
   try {
-    if (selectedFile) {
-      document.getElementById('selectedFileLabel').textContent = '⏳ กำลังอัปโหลด...';
-      try {
-        const fileRef = storage.ref('uploads/' + Date.now() + '_' + selectedFile.name);
-        const uploadTask = await fileRef.put(selectedFile);
-        const downloadURL = await uploadTask.ref.getDownloadURL();
-        fileData = { name: selectedFile.name, url: downloadURL };
-      } catch (stErr) {
-        systemDiagnostics.fileUpload.status = 'error';
-        logSystemError('Storage File Upload', stErr.message);
-        alert('⚠️ อัปโหลดไฟล์ลง Storage ไม่สำเร็จ (สิทธิ์การเข้าถึงหรือ CORS Policy)\nระบบจะทำการส่งเฉพาะข้อความ');
-      }
-    }
-
-    await db.ref('messages').push({
+    const payload = {
       sender: myName,
       senderUid: myUid,
       isAdmin: isAdmin,
+      isSuperAdmin: (myEmail === ADMIN_EMAIL),
       text: msgText,
-      file: fileData,
       mode: mode,
       targetUid: mode === 'private' ? targetUid : null,
+      isQA: isQAMode,
+      qaAnswered: false,
+      replyTo: replyTargetMessage ? { sender: replyTargetMessage.sender, text: replyTargetMessage.text } : null,
       time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       ts: Date.now()
-    });
+    };
 
+    await db.ref('messages').push(payload);
+    db.ref(`users/${myUid}/msgCount`).transaction(count => (count || 0) + 1);
+
+    lastSentTime = Date.now();
     input.value = '';
-    document.getElementById('fileInput').value = '';
-    document.getElementById('selectedFileLabel').textContent = '';
-    selectedFile = null;
+    cancelReply();
+    if (isQAMode) toggleQAMode();
+    db.ref(`typing/${myUid}`).remove();
   } catch (err) {
     logSystemError('Message Send Failed', err.message);
     alert('ส่งข้อความไม่สำเร็จ: ' + err.message);
@@ -940,13 +1493,7 @@ function submitReport(){
 }
 
 function openEditProfile(){
-  if (!systemSettings.allowNameChange && !isAdmin) {
-    return alert('⚠️ ผู้ดูแลระบบปิดการเปลี่ยนชื่อชั่วคราว');
-  }
-  document.getElementById('profileUidText').textContent = myUid;
-  document.getElementById('profileEmailText').textContent = myEmail;
-  document.getElementById('newDisplayNameInput').value = myName;
-  openModal('editProfileOverlay');
+  inspectUserProfile(myUid);
 }
 
 async function saveMyDisplayName(){
@@ -956,7 +1503,7 @@ async function saveMyDisplayName(){
 
   const oldName = myName;
   myName = newName;
-  document.getElementById('myNicknameTag').textContent = myName + (isAdmin ? ' 🛠' : '');
+  document.getElementById('myNicknameTag').textContent = myName + (myEmail === ADMIN_EMAIL ? ' 👑' : (isAdmin ? ' 🛠' : ''));
 
   try {
     await db.ref(`users/${myUid}/name`).set(newName);
@@ -1003,7 +1550,7 @@ function renderUserShortcuts(shortcuts){
 function openFullAdminCenter(){
   if (!isAdmin) return alert('สิทธิ์ไม่ถูกต้อง');
   document.getElementById('adminContainer').style.display = 'flex';
-  document.getElementById('adminUserDisplayName').textContent = `${myName} (${myUid.substring(0, 6)}...)`;
+  document.getElementById('adminUserDisplayName').textContent = `${myName} (${myEmail})`;
   switchAdminTab('dashboard');
 }
 
@@ -1034,6 +1581,10 @@ function switchAdminTab(tab, element){
     case 'dashboard':
       titleEl.innerHTML = '<i class="fa-solid fa-chart-pie"></i> Admin Dashboard';
       renderAdminDashboard();
+      break;
+    case 'whitelist':
+      titleEl.innerHTML = '<i class="fa-solid fa-user-lock"></i> Private Friend Whitelist';
+      renderAdminWhitelistSection();
       break;
     case 'users':
       titleEl.innerHTML = '<i class="fa-solid fa-users"></i> User Management & Permissions';
@@ -1142,6 +1693,62 @@ async function renderAdminDashboard(){
   });
 }
 
+function renderAdminWhitelistSection() {
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">🔐 จัดการรายชื่อเพื่อนที่อนุญาต (Private Access Whitelist)</div>
+        <button class="btn btn-sm" onclick="addWhitelistPrompt()">+ เพิ่ม Email เพื่อน</button>
+      </div>
+      <p style="font-size:.82rem;color:#64748b;margin-bottom:12px;">เมื่อเปิดระบบ "เฉพาะเพื่อนเท่านั้น" เฉพาะ Email ในรายการนี้จะสามารถใช้งานเว็บได้</p>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Email ที่อนุญาต</th><th>วันที่เพิ่ม</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody id="whitelistTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('whitelistTableBody');
+  if (Object.keys(whitelistCache).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#888;">ยังไม่มี Email ใน Whitelist</td></tr>';
+    return;
+  }
+
+  Object.keys(whitelistCache).forEach(key => {
+    const w = whitelistCache[key];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(w.email)}</strong></td>
+      <td>${escapeHtml(w.addedAt || '-')}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeWhitelist('${key}')">ลบออก</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addWhitelistPrompt() {
+  const email = prompt('ระบุ Email เพื่อนที่อนุญาตให้เข้าใช้งาน:');
+  if (!email || !email.includes('@')) return alert('กรุณากรอก Email ให้ถูกต้อง');
+
+  db.ref('whitelist').push({
+    email: email.toLowerCase().trim(),
+    addedAt: new Date().toLocaleString('th-TH')
+  }).then(() => {
+    showToast('เพิ่ม Email ใน Whitelist เรียบร้อยแล้ว');
+  });
+}
+
+function removeWhitelist(key) {
+  if (confirm('ต้องการลบ Email นี้ออกจาก Whitelist?')) {
+    db.ref(`whitelist/${key}`).remove().then(() => showToast('ลบเรียบร้อยแล้ว'));
+  }
+}
+
 function renderAdminUsersSection(){
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
@@ -1184,25 +1791,32 @@ function filterUserTable(){
     if (nameMatch || uidMatch || emailMatch) {
       const tr = document.createElement('tr');
       const isOnline = u.online;
+      const isSuperAdminUser = (u.email === ADMIN_EMAIL || u.isSuperAdmin);
       const isTargetAdmin = u.admin === true;
+
+      let roleText = '👤 เพื่อน (Student)';
+      if (isSuperAdminUser) roleText = '<strong style="color:#d97706;">👑 Super Admin</strong>';
+      else if (isTargetAdmin) roleText = '<strong style="color:var(--primary-dark);">🛠 Admin</strong>';
 
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.name)}</strong></td>
         <td><code style="font-size:.78rem;">${escapeHtml(u.uid)}</code></td>
         <td>${escapeHtml(u.email || 'ไม่มีข้อมูล')}</td>
         <td><span class="status-tag ${isOnline ? 'status-online' : 'status-offline'}">${isOnline ? '🟢 Online' : '⚪ Offline'}</span></td>
-        <td>${isTargetAdmin ? '<strong style="color:var(--primary-dark);">🛠 Admin</strong>' : 'ผู้ใช้ทั่วไป'}</td>
+        <td>${roleText}</td>
         <td>${escapeHtml(u.createdAt || '-')}</td>
         <td>
           <div class="row" style="gap:4px;flex-wrap:wrap;">
             <button class="btn btn-sm" onclick="viewUserHistory('${u.uid}')">ประวัติ</button>
             ${
-              isTargetAdmin
-                ? (u.uid !== myUid ? `<button class="btn btn-sm btn-warning" onclick="toggleUserAdminRole('${u.uid}', false)">ถอดสิทธิ์ Admin</button>` : '')
-                : `<button class="btn btn-sm" style="background:#4b6ef5;" onclick="toggleUserAdminRole('${u.uid}', true)">แต่งตั้ง Admin</button>`
+              isSuperAdminUser 
+                ? '<span style="font-size:.75rem;color:#888;padding:4px;">🔒 สิทธิ์สูงสุด (ห้ามถอด)</span>'
+                : (isTargetAdmin
+                    ? `<button class="btn btn-sm btn-warning" onclick="toggleUserAdminRole('${u.uid}', false)">ถอดสิทธิ์ Admin</button>`
+                    : `<button class="btn btn-sm" style="background:#4b6ef5;" onclick="toggleUserAdminRole('${u.uid}', true)">แต่งตั้ง Admin</button>`)
             }
-            ${u.uid !== myUid ? `<button class="btn btn-sm btn-secondary" onclick="kickUser('${u.uid}')">เตะ</button>` : ''}
-            ${u.uid !== myUid ? `<button class="btn btn-sm btn-danger" onclick="banUserPrompt('${u.uid}')">แบน</button>` : ''}
+            ${(!isSuperAdminUser && u.uid !== myUid) ? `<button class="btn btn-sm btn-secondary" onclick="kickUser('${u.uid}')">เตะ</button>` : ''}
+            ${(!isSuperAdminUser && u.uid !== myUid) ? `<button class="btn btn-sm btn-danger" onclick="banUserPrompt('${u.uid}')">แบน</button>` : ''}
           </div>
         </td>
       `;
@@ -1213,6 +1827,9 @@ function filterUserTable(){
 
 function toggleUserAdminRole(targetUid, setAdmin){
   const targetUser = allUsersCache[targetUid];
+  if (targetUser && targetUser.email === ADMIN_EMAIL) {
+    return alert('🚫 ไม่สามารถถอดสิทธิ์ผู้ดูแลระบบสูงสุด (Super Admin) ได้');
+  }
   const actionName = setAdmin ? 'แต่งตั้งเป็น Admin' : 'ถอดสิทธิ์ Admin';
   
   if (confirm(`คุณต้องการ ${actionName} ให้แก่ผู้ใช้ "${targetUser ? targetUser.name : targetUid}" ใช่หรือไม่?`)){
@@ -1227,6 +1844,10 @@ function toggleUserAdminRole(targetUid, setAdmin){
 }
 
 function kickUser(uid){
+  const targetUser = allUsersCache[uid];
+  if (targetUser && targetUser.email === ADMIN_EMAIL) {
+    return alert('🚫 ไม่สามารถเตะผู้ดูแลระบบสูงสุดออกจากระบบได้');
+  }
   if (confirm('คุณต้องการเตะผู้ใช้คนนี้ออกจากระบบใช่หรือไม่?')){
     db.ref('users/' + uid).remove().then(() => {
       logActivity(myName, myUid, 'Kick User', `เตะ UID: ${uid}`);
@@ -1236,6 +1857,10 @@ function kickUser(uid){
 }
 
 function banUserPrompt(uid){
+  const targetUser = allUsersCache[uid];
+  if (targetUser && targetUser.email === ADMIN_EMAIL) {
+    return alert('🚫 ไม่สามารถแบนผู้ดูแลระบบสูงสุดได้');
+  }
   const reason = prompt('ระบุเหตุผลในการแบน:');
   if (reason !== null) {
     db.ref('bans/' + uid).set({
@@ -1383,7 +2008,7 @@ function renderAdminReportsSection(){
         <span>👤 <strong>${escapeHtml(r.user)}</strong> (UID: ${escapeHtml(r.uid)})</span>
         <span>${escapeHtml(r.time || '')}</span>
       </div>
-      <div style="font-size:.9rem;color:#1e293b;margin-bottom:10px;">${escapeHtml(r.text)}</div>
+      <div style="font-size:.9rem;color:#1e293b;margin-bottom:10px;">${parseFormattedText(r.text)}</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <span class="status-tag ${r.status === 'resolved' ? 'status-online' : 'status-banned'}">${r.status === 'resolved' ? '✅ แก้ไขแล้ว' : '🔴 ใหม่'}</span>
         ${r.status !== 'resolved' ? `<button class="btn btn-sm" style="background:#2fa86a;" onclick="updateReportStatus('${key}', 'resolved')">ทำเครื่องหมายว่าแก้แล้ว</button>` : ''}
@@ -1527,7 +2152,7 @@ function renderAdminAppearanceSection(){
       <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
         <div>
           <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:4px;">ชื่อห้องแชท</label>
-          <input type="text" id="adminSettingTitle" placeholder="Classroom Cloud Chat" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;">
+          <input type="text" id="adminSettingTitle" placeholder="FriendHub Chat" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;">
         </div>
         <div>
           <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:4px;">สีหลักของธีม</label>
@@ -1564,6 +2189,14 @@ function renderAdminSettingsSection(){
         
         <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
           <div>
+            <div style="font-weight:700;font-size:.9rem;color:var(--primary-dark);">🔐 ระบบเฉพาะเพื่อนที่อนุญาตเท่านั้น (Private Access Only)</div>
+            <div style="font-size:.78rem;color:#64748b;">เฉพาะบัญชีที่มี Email อยู่ใน Whitelist เท่านั้นที่จะเข้าใช้งานได้</div>
+          </div>
+          <input type="checkbox" id="sysPrivateAccessOnly" ${systemSettings.privateAccessOnly ? 'checked' : ''} style="width:20px;height:20px;">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div>
             <div style="font-weight:700;font-size:.9rem;">อนุญาตให้ผู้ใช้เปลี่ยนชื่อตนเอง</div>
             <div style="font-size:.78rem;color:#64748b;">เปิด/ปิด การกดเปลี่ยนชื่อที่แท็กผู้ใช้</div>
           </div>
@@ -1572,10 +2205,24 @@ function renderAdminSettingsSection(){
 
         <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;">อนุญาตให้ส่ง/อัปโหลดไฟล์</div>
-            <div style="font-size:.78rem;color:#64748b;">เปิด/ปิด ปุ่มแนบไฟล์ 📎 ในห้องแชท</div>
+            <div style="font-weight:700;font-size:.9rem;">โหมดประกาศอ่านอย่างเดียว (Read-Only Mode)</div>
+            <div style="font-size:.78rem;color:#64748b;">เฉพาะ Admin เท่านั้นที่ส่งข้อความในช่องหลักได้</div>
           </div>
-          <input type="checkbox" id="sysAllowFileUpload" ${systemSettings.allowFileUpload ? 'checked' : ''} style="width:20px;height:20px;">
+          <input type="checkbox" id="sysReadOnlyMode" ${systemSettings.readOnlyMode ? 'checked' : ''} style="width:20px;height:20px;">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div>
+            <div style="font-weight:700;font-size:.9rem;">ระบบคัดกรองคำหยาบ (Anti-Profanity Filter)</div>
+            <div style="font-size:.78rem;color:#64748b;">เซ็นเซอร์คำไม่สุภาพเป็น *** โดยอัตโนมัติ</div>
+          </div>
+          <input type="checkbox" id="sysProfanityFilter" ${systemSettings.profanityFilter ? 'checked' : ''} style="width:20px;height:20px;">
+        </div>
+
+        <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-weight:700;font-size:.9rem;margin-bottom:4px;">โหมดชะลอข้อความ (Slow Mode)</div>
+          <div style="font-size:.78rem;color:#64748b;margin-bottom:8px;">กำหนดวินาทีห้ามส่งข้อความติดๆ กัน (0 = ปิดใช้งาน)</div>
+          <input type="number" id="sysSlowModeSeconds" value="${systemSettings.slowModeSeconds || 0}" min="0" max="60" style="padding:6px;border:1px solid #cbd5e1;border-radius:6px;width:100px;"> วินาที
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
@@ -1586,11 +2233,6 @@ function renderAdminSettingsSection(){
           <input type="checkbox" id="sysMaintenanceMode" ${systemSettings.maintenanceMode ? 'checked' : ''} style="width:20px;height:20px;">
         </div>
 
-        <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
-          <label style="font-weight:700;font-size:.9rem;display:block;margin-bottom:4px;">ขนาดไฟล์สูงสุดที่อนุญาต (MB)</label>
-          <input type="number" id="sysMaxFileSizeMB" value="${systemSettings.maxFileSizeMB || 10}" min="1" max="50" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;">
-        </div>
-
         <button class="btn" onclick="saveSystemSettingsConfig()"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าระบบ</button>
       </div>
     </div>
@@ -1599,15 +2241,19 @@ function renderAdminSettingsSection(){
 
 function saveSystemSettingsConfig(){
   const allowNameChange = document.getElementById('sysAllowNameChange').checked;
-  const allowFileUpload = document.getElementById('sysAllowFileUpload').checked;
   const maintenanceMode = document.getElementById('sysMaintenanceMode').checked;
-  const maxFileSizeMB = parseInt(document.getElementById('sysMaxFileSizeMB').value) || 10;
+  const readOnlyMode = document.getElementById('sysReadOnlyMode').checked;
+  const profanityFilter = document.getElementById('sysProfanityFilter').checked;
+  const privateAccessOnly = document.getElementById('sysPrivateAccessOnly').checked;
+  const slowModeSeconds = parseInt(document.getElementById('sysSlowModeSeconds').value) || 0;
 
   const newSys = {
     allowNameChange: allowNameChange,
-    allowFileUpload: allowFileUpload,
     maintenanceMode: maintenanceMode,
-    maxFileSizeMB: maxFileSizeMB
+    readOnlyMode: readOnlyMode,
+    profanityFilter: profanityFilter,
+    privateAccessOnly: privateAccessOnly,
+    slowModeSeconds: slowModeSeconds
   };
 
   db.ref('settings/system').set(newSys).then(() => {
@@ -1661,12 +2307,12 @@ function updateReportBadge(count){
 }
 
 function applySettings(s){
-  const title = s.title || 'Classroom Cloud Chat';
+  const title = s.title || 'FriendHub Chat';
   document.querySelector('.chat-header .title').textContent = title;
   document.getElementById('chatTitleHeader').textContent = title;
   
   const banner = document.getElementById('pinnedBanner');
-  if (s.banner){ banner.textContent = '📌 ' + s.banner; banner.style.display = 'block'; }
+  if (s.banner){ banner.innerHTML = '📌 ' + parseFormattedText(s.banner); banner.style.display = 'block'; }
   else { banner.style.display = 'none'; }
 
   if (s.color){
