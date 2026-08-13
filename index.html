@@ -1035,16 +1035,32 @@ function createMessageNode(key, data, isMine) {
     html += `<div class="quote-box"><strong>${escapeHtml(data.replyTo.sender)}:</strong> ${parseFormattedText(data.replyTo.text)}</div>`;
   }
 
-  if (data.isQA) {
-    const isAnswered = data.qaAnswered;
-    html += `
-      <div class="qa-card ${isAnswered ? 'answered' : ''}">
-        <div style="font-weight:bold;font-size:.85rem;">❓ คำถาม Q&A ${isAnswered ? '✅ (ตอบแล้ว)' : '⏳ (รอคำตอบ)'}</div>
-        <div>${parseFormattedText(data.text)}</div>
-        ${!isAnswered && (isAdmin || isMine) ? `<button class="btn btn-sm" style="margin-top:6px;background:#10b981;" onclick="markQAAnswered('${key}')">Mark as Answered</button>` : ''}
+if (data.isQA) {
+  const isAnswered = data.qaAnswered;
+
+  html += `
+    <div class="qa-card ${isAnswered ? 'answered' : ''}">
+      <div style="font-weight:bold;font-size:.85rem;">
+        ❓ คำถาม Q&A ${isAnswered ? '✅ (ตอบแล้ว)' : '⏳ (รอคำตอบ)'}
       </div>
-    `;
-  } 
+
+      <div>${parseFormattedText(data.text)}</div>
+
+      ${
+        !isAnswered && (isAdmin || isMine)
+          ? `
+            <button
+              class="btn btn-sm"
+              style="margin-top:6px;background:#000000;color:#ffffff;border:1px solid #000000;"
+              onclick="markQAAnswered('${key}')">
+              Mark as Answered
+            </button>
+          `
+          : ''
+      }
+    </div>
+  `;
+}
   else if (data.isPoll && data.pollData) {
     const poll = data.pollData;
     let pollOptionsHtml = '';
