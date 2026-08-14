@@ -2198,43 +2198,23 @@ function filterUserTable(){
   tbody.innerHTML = '';
 
   Object.values(allUsersCache).forEach(u => {
-    const match = (u.name || '').toLowerCase().includes(query) ||
-                  (u.uid || '').toLowerCase().includes(query) ||
-                  (u.email || '').toLowerCase().includes(query);
-    if (match) {
-      const isSuper = (u.email === ADMIN_EMAIL || u.isSuperAdmin);
-      const isMuted = u.status === 'muted';
+    if (!query || u.name.toLowerCase().includes(query) || u.uid.toLowerCase().includes(query) || (u.email && u.email.toLowerCase().includes(query))) {
       const tr = document.createElement('tr');
+      const isSuper = (u.email === ADMIN_EMAIL);
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.name)}</strong></td>
         <td style="font-family:monospace;font-size:.78rem;">${escapeHtml(u.uid)}</td>
         <td>${escapeHtml(u.email || '-')}</td>
-        <td>
-          ${u.online 
-            ? '<span class="status-tag status-online">ออนไลน์</span>' 
-            : '<span class="status-tag status-offline">ออฟไลน์</span>'}
-          ${isMuted ? '<span class="status-tag status-banned" style="margin-left:4px;">Muted</span>' : ''}
-        </td>
-        <td>
-          ${isSuper 
-            ? '<span class="badge-tiny badge-role-owner">👑 Super Admin</span>' 
-            : (u.admin 
-              ? '<span class="badge-tiny badge-role-admin">🛠 Admin</span>' 
-              : '<span class="badge-tiny badge-role-friend">👤 User</span>')}
-        </td>
+        <td><span class="status-tag ${u.online ? 'status-online' : 'status-offline'}">${u.online ? '🟢 ออนไลน์' : '⚪ ออฟไลน์'}</span></td>
+        <td>${isSuper ? '👑 เจ้าของ' : (u.admin ? '🛠 แอดมิน' : '👤 เพื่อน')}</td>
         <td>${escapeHtml(u.createdAt || '-')}</td>
-        <td style="display:flex;gap:4px;flex-wrap:wrap;">
-          <button class="btn btn-sm" onclick="viewUserHistory('${u.uid}')">ประวัติ</button>
+        <td>
           ${!isSuper ? `
-            <button class="btn btn-sm ${u.admin ? 'btn-warning' : ''}" onclick="toggleAdminRole('${u.uid}', ${!u.admin})">
-              ${u.admin ? 'ปลด Admin' : 'ตั้ง Admin'}
-            </button>
-            <button class="btn btn-sm ${isMuted ? '' : 'btn-warning'}" onclick="toggleMuteUser('${u.uid}', ${!isMuted})">
-              ${isMuted ? 'Unmute' : 'Mute'}
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="promptBanUser('${u.uid}', '${escapeHtml(u.name)}')">แบน</button>
-            <button class="btn btn-sm btn-danger" onclick="kickUserFromSystem('${u.uid}')">เตะ</button>
-          ` : '<span style="font-size:.75rem;color:#888;">(คุ้มครอง)</span>'}
+            <button class="btn btn-sm ${u.admin ? 'btn-secondary' : ''}" onclick="toggleUserAdmin('${u.uid}', ${!u.admin})">${u.admin ? 'ถอดแอดมิน' : 'ตั้งเป็นแอดมิน'}</button>
+            <button class="btn btn-sm btn-warning" onclick="toggleUserMute('${u.uid}', '${u.status}')">${u.status === 'muted' ? 'Unmute' : 'Mute'}</button>
+            <button class="btn btn-sm btn-danger" onclick="banUserPrompt('${u.uid}', '${escapeHtml(u.name)}')">แบน</button>
+            <button class="btn btn-sm" onclick="viewUserHistory('${u.uid}')">ประวัติ</button>
+          ` : '<span>เจ้าของระบบสูงสุด</span>'}
         </td>
       `;
       tbody.appendChild(tr);
@@ -2242,497 +2222,451 @@ function filterUserTable(){
   });
 }
 
-function toggleAdminRole(targetUid, setAdmin) {
-  const targetUser = allUsersCache[targetUid];
-  if (targetUser && targetUser.email === ADMIN_EMAIL) {
-    return alert('🚫 ไม่สามารถเปลี่ยนสิทธิ์ของ Super Admin ได้');
-  }
-
-  db.ref(`users/${targetUid}/admin`).set(setAdmin).then(() => {
-    logActivity(myName, myUid, 'Change Permission', `${setAdmin ? 'ตั้ง' : 'ปลด'} Admin UID: ${targetUid}`);
-    showToast('อัปเดตสิทธิ์เรียบร้อยแล้ว');
+function toggleUserAdmin(uid, makeAdmin) {
+  db.ref(`users/${uid}/admin`).set(makeAdmin).then(() => {
+    showToast('อัปเดตสิทธิ์ผู้ใช้เรียบร้อย');
   });
 }
 
-function toggleMuteUser(targetUid, setMute) {
-  const targetUser = allUsersCache[targetUid];
-  if (targetUser && targetUser.email === ADMIN_EMAIL) {
-    return alert('🚫 ไม่สามารถ Mute เจ้าของระบบได้');
-  }
-
-  const status = setMute ? 'muted' : 'normal';
-  db.ref(`users/${targetUid}/status`).set(status).then(() => {
-    logActivity(myName, myUid, 'Mute User', `${setMute ? 'Mute' : 'Unmute'} UID: ${targetUid}`);
-    showToast(setMute ? 'Mute ผู้ใช้แล้ว' : 'Unmute เรียบร้อย');
+function toggleUserMute(uid, currentStatus) {
+  const newStatus = currentStatus === 'muted' ? 'normal' : 'muted';
+  db.ref(`users/${uid}/status`).set(newStatus).then(() => {
+    showToast(newStatus === 'muted' ? 'Mute ผู้ใช้แล้ว' : 'Unmute ผู้ใช้แล้ว');
   });
 }
 
-function promptBanUser(targetUid, targetName) {
-  const targetUser = allUsersCache[targetUid];
-  if (targetUser && targetUser.email === ADMIN_EMAIL) {
-    return alert('🚫 ไม่สามารถแบนเจ้าของระบบสูงสุดได้');
+function banUserPrompt(uid, name) {
+  const reason = prompt(`ระบุเหตุผลที่แบนผู้ใช้ ${name}:`);
+  if (reason !== null) {
+    db.ref(`bans/${uid}`).set({
+      reason: reason || 'ไม่ระบุ',
+      bannedAt: new Date().toLocaleString('th-TH'),
+      bannedBy: myName
+    }).then(() => {
+      db.ref(`users/${uid}/online`).set(false);
+      showToast(`แบนผู้ใช้ ${name} สำเร็จ`);
+    });
   }
+}
 
-  const reason = prompt(`ระบุเหตุผลในการแบนคุณ ${targetName}:`);
-  if (!reason) return;
+function viewUserHistory(uid) {
+  db.ref(`userHistory/${uid}`).once('value', snap => {
+    const data = snap.val() || {};
+    const container = document.getElementById('userHistoryContent');
+    let html = `<div style="font-weight:bold;margin-bottom:8px;">ประวัติผู้ใช้ UID: ${uid}</div>`;
+    
+    html += `<div style="font-weight:bold;color:var(--primary);margin-top:6px;">ประวัติการเข้าสู่ระบบ:</div>`;
+    if (data.loginHistory) {
+      Object.values(data.loginHistory).forEach(t => {
+        html += `<div style="font-size:.8rem;color:var(--text-muted);">• ${escapeHtml(t)}</div>`;
+      });
+    } else {
+      html += `<div style="font-size:.8rem;color:var(--text-muted);">- ไม่มีข้อมูล -</div>`;
+    }
 
-  db.ref(`bans/${targetUid}`).set({
-    name: targetName,
-    reason: reason,
-    bannedBy: myName,
-    time: new Date().toLocaleString('th-TH')
-  }).then(() => {
-    logActivity(myName, myUid, 'Ban User', `แบน ${targetName} (${reason})`);
-    showToast(`สั่งแบน ${targetName} เรียบร้อยแล้ว`);
+    html += `<div style="font-weight:bold;color:var(--primary);margin-top:6px;">ประวัติการเปลี่ยนชื่อ:</div>`;
+    if (data.nameHistory) {
+      Object.values(data.nameHistory).forEach(h => {
+        html += `<div style="font-size:.8rem;color:var(--text-muted);">• ${escapeHtml(h.time)}: ${escapeHtml(h.from)} -> ${escapeHtml(h.to)}</div>`;
+      });
+    } else {
+      html += `<div style="font-size:.8rem;color:var(--text-muted);">- ไม่มีข้อมูล -</div>`;
+    }
+
+    container.innerHTML = html;
+    openModal('userHistoryOverlay');
   });
 }
 
-function kickUserFromSystem(targetUid) {
-  const targetUser = allUsersCache[targetUid];
-  if (targetUser && targetUser.email === ADMIN_EMAIL) {
-    return alert('🚫 ไม่สามารถเตะเจ้าของระบบสูงสุดได้');
-  }
-
-  if (confirm('คุณต้องการเตะผู้ใช้งานนี้ออกจากระบบใช่หรือไม่?')) {
-    db.ref(`users/${targetUid}`).remove().then(() => {
-      logActivity(myName, myUid, 'Kick User', `เตะ UID: ${targetUid}`);
-      showToast('เตะผู้ใช้แล้ว');
-    });
-  }
-}
-
-async function viewUserHistory(targetUid) {
-  const content = document.getElementById('userHistoryContent');
-  content.innerHTML = 'กำลังโหลดประวัติ...';
-
-  const snap = await db.ref(`userHistory/${targetUid}`).once('value');
-  const hData = snap.val() || {};
-
-  let html = '';
-  
-  // Name History
-  html += '<strong style="color:var(--primary);">📝 ประวัติการเปลี่ยนชื่อ:</strong>';
-  if (hData.nameHistory) {
-    html += '<ul style="padding-left:16px;">';
-    Object.values(hData.nameHistory).forEach(item => {
-      html += `<li>เปลี่ยนจาก "<strong>${escapeHtml(item.from)}</strong>" เป็น "<strong>${escapeHtml(item.to)}</strong>" (${escapeHtml(item.time)})</li>`;
-    });
-    html += '</ul>';
-  } else {
-    html += '<p style="color:#888;">ไม่มีประวัติเปลี่ยนชื่อ</p>';
-  }
-
-  // Login History
-  html += '<strong style="color:var(--primary);margin-top:10px;">🔑 ประวัติการล็อกอินล่าสุด:</strong>';
-  if (hData.loginHistory) {
-    html += '<ul style="padding-left:16px;">';
-    const logins = Object.values(hData.loginHistory).reverse().slice(0, 5);
-    logins.forEach(timeStr => {
-      html += `<li>${escapeHtml(timeStr)}</li>`;
-    });
-    html += '</ul>';
-  } else {
-    html += '<p style="color:#888;">ไม่มีประวัติล็อกอิน</p>';
-  }
-
-  content.innerHTML = html;
-  openModal('userHistoryOverlay');
-}
-
-async function renderAdminBansSection(){
-  const area = document.getElementById('adminContentArea');
-  const banSnap = await db.ref('bans').once('value');
-  const bans = banSnap.val() || {};
-
-  let html = `
-    <div class="admin-card">
-      <div class="admin-card-header"><div class="admin-card-title">🚫 รายชื่อบัญชีที่ถูกแบน</div></div>
-      <table class="data-table">
-        <thead>
-          <tr><th>ผู้ถูกแบน</th><th>เหตุผล</th><th>ผู้สั่งแบน</th><th>เวลา</th><th>จัดการ</th></tr>
-        </thead>
-        <tbody>
-  `;
-
-  if (Object.keys(bans).length === 0) {
-    html += '<tr><td colspan="5" style="text-align:center;color:#888;">ไม่มีผู้ถูกแบนในขณะนี้</td></tr>';
-  } else {
-    Object.keys(bans).forEach(bUid => {
-      const b = bans[bUid];
-      html += `
-        <tr>
-          <td><strong>${escapeHtml(b.name)}</strong></td>
-          <td>${escapeHtml(b.reason)}</td>
-          <td>${escapeHtml(b.bannedBy)}</td>
-          <td>${escapeHtml(b.time)}</td>
-          <td><button class="btn btn-sm" onclick="unbanUser('${bUid}')">ปลดแบน</button></td>
-        </tr>
-      `;
-    });
-  }
-
-  html += '</tbody></table></div>';
-  area.innerHTML = html;
-}
-
-function unbanUser(targetUid) {
-  if (confirm('ต้องการปลดแบนผู้ใช้งานนี้ใช่หรือไม่?')) {
-    db.ref(`bans/${targetUid}`).remove().then(() => {
-      logActivity(myName, myUid, 'Unban User', `ปลดแบน UID: ${targetUid}`);
-      showToast('ปลดแบนเรียบร้อยแล้ว');
-      renderAdminBansSection();
-    });
-  }
-}
-
-function renderAdminChatSection(){
+function renderAdminBansSection() {
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
     <div class="admin-card">
       <div class="admin-card-header">
-        <div class="admin-card-title">💬 จัดการระบบแชท</div>
-        <button class="btn btn-danger btn-sm" onclick="clearAllChat()"><i class="fa-solid fa-trash"></i> ล้างแชททั้งหมด</button>
+        <div class="admin-card-title">🚫 รายชื่อบัญชีที่ถูกแบน (Banned Users)</div>
       </div>
-      <p style="font-size:.85rem;color:#64748b;">คุณสามารถจัดการข้อความ ข้อมูลกลุ่ม หรือล้างประวัติการพูดคุยเพื่อเพิ่มประสิทธิภาพระบบได้ที่นี่</p>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>UID</th><th>เหตุผล</th><th>แบนโดย</th><th>เวลาที่แบน</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody id="banTableBody"></tbody>
+        </table>
+      </div>
     </div>
   `;
+  db.ref('bans').once('value', snap => {
+    const tbody = document.getElementById('banTableBody');
+    const data = snap.val() || {};
+    if (Object.keys(data).length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ไม่มีผู้ถูกแบนในขณะนี้</td></tr>';
+      return;
+    }
+    let html = '';
+    Object.keys(data).forEach(uid => {
+      const b = data[uid];
+      html += `
+        <tr>
+          <td style="font-family:monospace;font-size:.78rem;">${escapeHtml(uid)}</td>
+          <td>${escapeHtml(b.reason)}</td>
+          <td>${escapeHtml(b.bannedBy || '-')}</td>
+          <td>${escapeHtml(b.bannedAt || '-')}</td>
+          <td><button class="btn btn-sm" onclick="unbanUser('${uid}')">ปลดแบน</button></td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  });
 }
 
-function renderAdminAnnounceSection(){
+function unbanUser(uid) {
+  db.ref(`bans/${uid}`).remove().then(() => {
+    showToast('ปลดแบนผู้ใช้เรียบร้อยแล้ว');
+    renderAdminBansSection();
+  });
+}
+
+function renderAdminChatSection() {
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
     <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:12px;">📢 ส่งข้อความประกาศระบบ (System Announcement)</div>
-      <textarea id="announceTextInput" rows="4" style="width:100%;padding:10px;border-radius:8px;border:1px solid #cbd5e1;" placeholder="พิมพ์ข้อความประกาศที่ต้องการให้แสดงในแชท..."></textarea>
-      <div style="margin-top:10px;display:flex;gap:10px;">
-        <button class="btn" onclick="sendSystemAnnouncement()"><i class="fa-solid fa-paper-plane"></i> ส่งประกาศเข้าระบบ</button>
-        <button class="btn btn-warning" onclick="setPinnedBannerFromAnnounce()"><i class="fa-solid fa-thumbtack"></i> ตั้งเป็นข้อความปักหมุด</button>
+      <div class="admin-card-header">
+        <div class="admin-card-title">💬 การจัดการแชทระบบ</div>
+        <button class="btn btn-danger btn-sm" onclick="clearAllChat()">ล้างประวัติแชททั้งหมด</button>
+      </div>
+      <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">คุณสามารถตรวจสอบหรือจัดการข้อความแชททั้งหมดได้จากที่นี่</p>
+      <div style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;" id="adminChatListContainer"></div>
+    </div>
+  `;
+  const container = document.getElementById('adminChatListContainer');
+  db.ref('messages').limitToLast(50).once('value', snap => {
+    if (!snap.exists()) {
+      container.innerHTML = '<div style="color:#888;">ไม่มีข้อความ</div>';
+      return;
+    }
+    let html = '';
+    snap.forEach(child => {
+      const m = child.val();
+      html += `
+        <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong style="color:var(--primary);">${escapeHtml(m.sender)}</strong> <span style="font-size:.75rem;color:#64748b;">(${escapeHtml(m.time)})</span>
+            <div style="font-size:.9rem;color:#1e293b;margin-top:2px;">${escapeHtml(m.text || '[สื่อ/โพล]')}</div>
+          </div>
+          <button class="btn btn-sm btn-danger" onclick="deleteMessage('${child.key}'); renderAdminChatSection();">ลบ</button>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  });
+}
+
+function renderAdminAnnounceSection() {
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📢 ประกาศข้อความระบบ (System Announcement)</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="font-size:.85rem;font-weight:600;color:#64748b;">ข้อความประกาศแจ้งเตือนถึงทุกคน:</label>
+        <textarea id="announceTextInput" rows="3" placeholder="พิมพ์ประกาศ..." style="padding:10px;border-radius:8px;border:1px solid #cbd5e1;width:100%;"></textarea>
+        <button class="btn" onclick="sendSystemAnnouncement()">ส่งประกาศทันที</button>
       </div>
     </div>
   `;
 }
 
-function sendSystemAnnouncement(){
+function sendSystemAnnouncement() {
   const text = document.getElementById('announceTextInput').value.trim();
-  if (!text) return alert('กรุณาพิมพ์ข้อความประกาศ');
-
+  if (!text) return alert('กรุณากรอกข้อความประกาศ');
   db.ref('messages').push({
+    sender: 'System Announcement 👑',
+    senderUid: 'system',
     system: true,
     text: text,
+    mode: 'group',
+    time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
     ts: Date.now()
   }).then(() => {
-    logActivity(myName, myUid, 'Announcement', text);
     document.getElementById('announceTextInput').value = '';
-    showToast('ส่งข้อความประกาศเรียบร้อย');
+    showToast('ส่งประกาศระบบเรียบร้อยแล้ว');
   });
 }
 
-function setPinnedBannerFromAnnounce(){
-  const text = document.getElementById('announceTextInput').value.trim();
-  if (!text) return alert('กรุณาพิมพ์ข้อความเพื่อนำไปปักหมุด');
-
-  db.ref('settings/banner').set(text).then(() => {
-    showToast('อัปเดตข้อความปักหมุดแล้ว');
-  });
-}
-
-function renderAdminReportsSection(){
+function renderAdminReportsSection() {
   const area = document.getElementById('adminContentArea');
-  let html = `
+  area.innerHTML = `
     <div class="admin-card">
-      <div class="admin-card-header"><div class="admin-card-title">🐞 รายงานปัญหาและขอฟีเจอร์</div></div>
-      <table class="data-table">
-        <thead>
-          <tr><th>ผู้ส่ง</th><th>รายละเอียด</th><th>เวลา</th><th>สถานะ</th><th>จัดการ</th></tr>
-        </thead>
-        <tbody>
+      <div class="admin-card-header">
+        <div class="admin-card-title">🐞 รายงานปัญหาจากผู้ใช้งาน (Bug Reports)</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>ผู้แจ้ง</th><th>เวลา</th><th>รายละเอียด</th><th>สถานะ</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody id="reportTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   `;
-
+  const tbody = document.getElementById('reportTableBody');
   if (Object.keys(reportsCache).length === 0) {
-    html += '<tr><td colspan="5" style="text-align:center;color:#888;">ไม่มีรายงานในระบบ</td></tr>';
-  } else {
-    Object.keys(reportsCache).reverse().forEach(rKey => {
-      const r = reportsCache[rKey];
-      const isResolved = r.status === 'resolved';
-      html += `
-        <tr>
-          <td><strong>${escapeHtml(r.user)}</strong></td>
-          <td>${escapeHtml(r.text)}</td>
-          <td>${escapeHtml(r.time)}</td>
-          <td>${isResolved ? '<span class="status-tag status-online">แก้ไขแล้ว</span>' : '<span class="status-tag status-banned">รอการแก้ไข</span>'}</td>
-          <td>
-            ${!isResolved ? `<button class="btn btn-sm" onclick="resolveReport('${rKey}')">ทำเครื่องหมายว่าเสร็จแล้ว</button>` : ''}
-            <button class="btn btn-sm btn-danger" onclick="deleteReport('${rKey}')">ลบ</button>
-          </td>
-        </tr>
-      `;
-    });
-  }
-
-  html += '</tbody></table></div>';
-  area.innerHTML = html;
-}
-
-function resolveReport(reportKey) {
-  db.ref(`reports/${reportKey}/status`).set('resolved').then(() => {
-    showToast('อัปเดตสถานะการแก้ไขแล้ว');
-  });
-}
-
-function deleteReport(reportKey) {
-  if (confirm('ต้องการลบรายงานนี้?')) {
-    db.ref(`reports/${reportKey}`).remove().then(() => {
-      showToast('ลบรายงานแล้ว');
-    });
-  }
-}
-
-async function renderAdminErrorsSection(){
-  const area = document.getElementById('adminContentArea');
-  const snap = await db.ref('errors').limitToLast(20).once('value');
-  const errs = snap.val() || {};
-
-  let html = `
-    <div class="admin-card">
-      <div class="admin-card-header">
-        <div class="admin-card-title">⚠️ ประวัติข้อผิดพลาดในระบบ (System Errors)</div>
-        <button class="btn btn-sm btn-danger" onclick="clearErrorLogs()">ล้าง Log ทั้งหมด</button>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr><th>เวลา</th><th>ประเภท</th><th>ข้อความแจ้งเตือน</th><th>ผู้ใช้งาน</th></tr>
-        </thead>
-        <tbody>
-  `;
-
-  if (Object.keys(errs).length === 0) {
-    html += '<tr><td colspan="4" style="text-align:center;color:#888;">ไม่มีประวัติข้อผิดพลาด</td></tr>';
-  } else {
-    Object.keys(errs).reverse().forEach(eKey => {
-      const e = errs[eKey];
-      html += `
-        <tr>
-          <td>${escapeHtml(e.time)}</td>
-          <td><strong style="color:var(--danger);">${escapeHtml(e.type)}</strong></td>
-          <td style="font-family:monospace;font-size:.8rem;">${escapeHtml(e.message)}</td>
-          <td>${escapeHtml(e.user)}</td>
-        </tr>
-      `;
-    });
-  }
-
-  html += '</tbody></table></div>';
-  area.innerHTML = html;
-}
-
-function clearErrorLogs() {
-  if (confirm('ต้องการล้างประวัติ Error Logs ทั้งหมด?')) {
-    db.ref('errors').remove().then(() => {
-      showToast('ล้าง Error Logs แล้ว');
-      renderAdminErrorsSection();
-    });
-  }
-}
-
-function renderAdminDiagnosticsSection(){
-  const area = document.getElementById('adminContentArea');
-  area.innerHTML = `
-    <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:12px;">🧩 เครื่องมือตรวจสอบสถานะระบบ (Diagnostics)</div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        ${Object.keys(systemDiagnostics).map(k => {
-          const d = systemDiagnostics[k];
-          return `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
-              <div><strong>${escapeHtml(d.name)}</strong> - <span style="font-size:.82rem;color:#64748b;">${escapeHtml(d.msg)}</span></div>
-              <span class="status-tag ${d.status==='ok'?'status-online':'status-banned'}">${d.status==='ok'?'ปกติ':'ขัดข้อง'}</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function renderAdminShortcutsSection(){
-  const area = document.getElementById('adminContentArea');
-  area.innerHTML = `
-    <div class="admin-card">
-      <div class="admin-card-header">
-        <div class="admin-card-title">🔗 จัดการเมนูลัด (Shortcuts Bar)</div>
-        <button class="btn btn-sm" onclick="addShortcutPrompt()">+ เพิ่มเมนูลัด</button>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr><th>ไอคอน</th><th>ชื่อ</th><th>URL ลิงก์</th><th>สถานะ</th><th>จัดการ</th></tr>
-        </thead>
-        <tbody id="shortcutsTableBody"></tbody>
-      </table>
-    </div>
-  `;
-
-  const tbody = document.getElementById('shortcutsTableBody');
-  if (Object.keys(shortcutsCache).length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ยังไม่มีเมนูลัด</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ไม่มีรายงานปัญหา</td></tr>';
     return;
   }
-
-  Object.keys(shortcutsCache).forEach(sKey => {
-    const s = shortcutsCache[sKey];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-size:1.2rem;">${s.icon || '🔗'}</td>
-      <td><strong>${escapeHtml(s.name)}</strong></td>
-      <td style="font-size:.8rem;"><a href="${s.url}" target="_blank">${escapeHtml(s.url)}</a></td>
-      <td>
-        <button class="btn btn-sm ${s.enabled ? '' : 'btn-secondary'}" onclick="toggleShortcutState('${sKey}', ${!s.enabled})">
-          ${s.enabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-        </button>
-      </td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteShortcut('${sKey}')">ลบ</button></td>
+  let html = '';
+  Object.keys(reportsCache).forEach(key => {
+    const r = reportsCache[key];
+    html += `
+      <tr>
+        <td><strong>${escapeHtml(r.user)}</strong></td>
+        <td>${escapeHtml(r.time || '-')}</td>
+        <td>${escapeHtml(r.text)}</td>
+        <td><span class="status-tag ${r.status === 'resolved' ? 'status-online' : 'status-banned'}">${r.status === 'resolved' ? 'แก้ไขแล้ว' : 'ใหม่'}</span></td>
+        <td>
+          ${r.status !== 'resolved' ? `<button class="btn btn-sm" onclick="resolveReport('${key}')">ทำเครื่องหมายว่าแก้แล้ว</button>` : '<span>-</span>'}
+          <button class="btn btn-sm btn-danger" onclick="deleteReport('${key}')">ลบ</button>
+        </td>
+      </tr>
     `;
-    tbody.appendChild(tr);
+  });
+  tbody.innerHTML = html;
+}
+
+function resolveReport(key) {
+  db.ref(`reports/${key}/status`).set('resolved').then(() => showToast('อัปเดตสถานะรายงานแล้ว'));
+}
+
+function deleteReport(key) {
+  db.ref(`reports/${key}`).remove().then(() => showToast('ลบรายงานแล้ว'));
+}
+
+function renderAdminErrorsSection() {
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">⚠️ บันทึกข้อผิดพลาดระบบ (Error Log)</div>
+        <button class="btn btn-sm btn-danger" onclick="db.ref('errors').remove(); showToast('ล้าง Error Log แล้ว'); renderAdminErrorsSection();">ล้าง Error Logs</button>
+      </div>
+      <div style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;" id="errorLogContainer">กำลังโหลด...</div>
+    </div>
+  `;
+  db.ref('errors').limitToLast(30).once('value', snap => {
+    const container = document.getElementById('errorLogContainer');
+    if (!snap.exists()) {
+      container.innerHTML = '<div style="color:#888;">ไม่พบ Error ในระบบ เยี่ยมมาก!</div>';
+      return;
+    }
+    let html = '';
+    const logs = [];
+    snap.forEach(c => logs.unshift(c.val()));
+    logs.forEach(l => {
+      html += `
+        <div style="background:#fee2e2;padding:10px;border-radius:8px;border:1px solid #fecaca;font-size:.85rem;color:#b91c1c;">
+          <strong>[${escapeHtml(l.type)}]</strong> โดย ${escapeHtml(l.user)} (${escapeHtml(l.time)})
+          <div style="font-family:monospace;margin-top:2px;font-size:.8rem;color:#7f1d1d;">${escapeHtml(l.message)}</div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
   });
 }
 
-function addShortcutPrompt(){
-  const name = prompt('ระบุชื่อเมนูลัด (เช่น: Facebook, YouTube):');
+function renderAdminDiagnosticsSection() {
+  const area = document.getElementById('adminContentArea');
+  let html = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">🧩 ตรวจสอบสถานะระบบ (Diagnostics)</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+  `;
+  Object.values(systemDiagnostics).forEach(diag => {
+    html += `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+        <div><strong>${escapeHtml(diag.name)}</strong><div style="font-size:.78rem;color:#64748b;">${escapeHtml(diag.msg)}</div></div>
+        <span class="status-tag ${diag.status === 'ok' ? 'status-online' : 'status-banned'}">${diag.status === 'ok' ? 'ปกติ' : 'ผิดพลาด'}</span>
+      </div>
+    `;
+  });
+  html += `</div></div>`;
+  area.innerHTML = html;
+}
+
+function renderAdminShortcutsSection() {
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">🔗 จัดการลิงก์ทางลัด (Shortcuts Bar)</div>
+        <button class="btn btn-sm" onclick="addShortcutPrompt()">+ เพิ่มทางลัด</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>ชื่อ</th><th>ไอคอน</th><th>URL</th><th>สถานะ</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody id="shortcutTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  const tbody = document.getElementById('shortcutTableBody');
+  if (Object.keys(shortcutsCache).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ยังไม่มีลิงก์ทางลัด</td></tr>';
+    return;
+  }
+  let html = '';
+  Object.keys(shortcutsCache).forEach(key => {
+    const sc = shortcutsCache[key];
+    html += `
+      <tr>
+        <td><strong>${escapeHtml(sc.name)}</strong></td>
+        <td>${escapeHtml(sc.icon || '🔗')}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sc.url)}</td>
+        <td>${sc.enabled ? '🟢 เปิด' : '⚪ ปิด'}</td>
+        <td>
+          <button class="btn btn-sm" onclick="toggleShortcut('${key}', ${!sc.enabled})">${sc.enabled ? 'ปิด' : 'เปิด'}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteShortcut('${key}')">ลบ</button>
+        </td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+function addShortcutPrompt() {
+  const name = prompt('ชื่อทางลัด:');
   if (!name) return;
-  const url = prompt('ระบุ URL ลิงก์ (เช่น https://google.com):');
+  const url = prompt('URL ลิงก์ (เช่น https://...):');
   if (!url) return;
-  const icon = prompt('ใส่ Emoji ไอคอน (เช่น 🌐, 🎮, 📌):', '🔗');
+  const icon = prompt('ไอคอน (Emoji เช่น 🎮, 📂, 🌐):') || '🔗';
 
   db.ref('shortcuts').push({
     name: name,
     url: url,
-    icon: icon || '🔗',
+    icon: icon,
     enabled: true
-  }).then(() => {
-    showToast('เพิ่มเมนูลัดเรียบร้อย');
-  });
+  }).then(() => showToast('เพิ่มทางลัดเรียบร้อย'));
 }
 
-function toggleShortcutState(sKey, enabled) {
-  db.ref(`shortcuts/${sKey}/enabled`).set(enabled).then(() => {
-    showToast('อัปเดตสถานะเมนูลัดแล้ว');
-  });
+function toggleShortcut(key, status) {
+  db.ref(`shortcuts/${key}/enabled`).set(status).then(() => showToast('อัปเดตทางลัดแล้ว'));
 }
 
-function deleteShortcut(sKey) {
-  if (confirm('ต้องการลบเมนูลัดนี้?')) {
-    db.ref(`shortcuts/${sKey}`).remove().then(() => {
-      showToast('ลบเมนูลัดแล้ว');
-    });
-  }
+function deleteShortcut(key) {
+  db.ref(`shortcuts/${key}`).remove().then(() => showToast('ลบทางลัดแล้ว'));
 }
 
-function renderAdminAppearanceSection(){
+function renderAdminAppearanceSection() {
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
     <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:12px;">🎨 ปรับแต่งธีมและส่วนหัว (Appearance)</div>
-      <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
-        <div>
-          <label style="font-size:.85rem;font-weight:600;">ชื่อหัวข้อห้องแชท (Title):</label>
-          <input type="text" id="appTitleInput" style="padding:8px;width:100%;border-radius:6px;border:1px solid #cbd5e1;margin-top:4px;" placeholder="FriendHub Cloud Chat">
-        </div>
-        <div>
-          <label style="font-size:.85rem;font-weight:600;">เลือกสีธีมหลัก (Primary Color):</label>
-          <input type="color" id="appColorInput" value="#4b6ef5" style="width:100%;height:40px;border:none;cursor:pointer;margin-top:4px;">
-        </div>
-        <button class="btn" onclick="saveAppearanceSettings()"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า</button>
+      <div class="admin-card-header">
+        <div class="admin-card-title">🎨 ปรับแต่งหน้าตาเว็บ (Appearance & Theme)</div>
       </div>
-    </div>
-  `;
-}
-
-function saveAppearanceSettings(){
-  const title = document.getElementById('appTitleInput').value.trim();
-  const color = document.getElementById('appColorInput').value;
-
-  if (title) db.ref('settings/title').set(title);
-  if (color) db.ref('settings/color').set(color);
-
-  showToast('บันทึกการตกแต่งธีมเรียบร้อย');
-}
-
-function renderAdminSettingsSection(){
-  const area = document.getElementById('adminContentArea');
-  area.innerHTML = `
-    <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:12px;">⚙️ การตั้งค่าระบบระดับสูง (System Controls)</div>
-      <div style="display:flex;flex-direction:column;gap:14px;max-width:480px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <label style="font-size:.85rem;font-weight:600;color:#64748b;">หัวข้อห้องแชทหลัก:</label>
+        <input type="text" id="adminAppTitleInput" placeholder="ชื่อหัวข้อ..." style="padding:10px;border-radius:8px;border:1px solid #cbd5e1;" value="FriendHub Cloud Chat">
         
-        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-          <span>🔐 <strong> Private Access Only (เฉพาะเพื่อนที่ได้รับอนุญาต)</strong></span>
-          <input type="checkbox" id="setPrivateAccess" ${systemSettings.privateAccessOnly ? 'checked' : ''} onchange="updateSysSetting('privateAccessOnly', this.checked)">
-        </label>
+        <label style="font-size:.85rem;font-weight:600;color:#64748b;">สีหลักธีมระบบ (Primary Color):</label>
+        <input type="color" id="adminAppColorInput" style="height:40px;width:100%;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer;" value="#4b6ef5">
 
-        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-          <span>🛠️ <strong> Maintenance Mode (ปิดปรับปรุงระบบ)</strong></span>
-          <input type="checkbox" id="setMaintenance" ${systemSettings.maintenanceMode ? 'checked' : ''} onchange="updateSysSetting('maintenanceMode', this.checked)">
-        </label>
-
-        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-          <span>📖 <strong> Read-Only Mode (อ่านได้อย่างเดียว ห้ามส่งข้อความ)</strong></span>
-          <input type="checkbox" id="setReadOnly" ${systemSettings.readOnlyMode ? 'checked' : ''} onchange="updateSysSetting('readOnlyMode', this.checked)">
-        </label>
-
-        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-          <span>🤬 <strong> Profanity Filter (ตัวกรองคำหยาบ)</strong></span>
-          <input type="checkbox" id="setProfanity" ${systemSettings.profanityFilter ? 'checked' : ''} onchange="updateSysSetting('profanityFilter', this.checked)">
-        </label>
-
-        <div>
-          <label style="font-size:.85rem;font-weight:600;">⏳ Slow Mode (หน่วงเวลาการส่งข้อความ / วินาที):</label>
-          <input type="number" id="setSlowMode" min="0" max="60" value="${systemSettings.slowModeSeconds}" style="width:100%;padding:8px;margin-top:4px;border-radius:6px;border:1px solid #cbd5e1;" onchange="updateSysSetting('slowModeSeconds', parseInt(this.value)||0)">
-        </div>
-
+        <button class="btn" onclick="saveAppearanceSettings()">บันทึกการปรับแต่ง</button>
       </div>
     </div>
   `;
 }
 
-function updateSysSetting(key, val) {
-  db.ref(`settings/system/${key}`).set(val).then(() => {
-    systemSettings[key] = val;
-    showToast('อัปเดตการตั้งค่าระบบเรียบร้อย');
-  });
+function saveAppearanceSettings() {
+  const title = document.getElementById('adminAppTitleInput').value.trim();
+  const color = document.getElementById('adminAppColorInput').value;
+
+  db.ref('settings').update({
+    title: title,
+    color: color
+  }).then(() => showToast('บันทึกการตั้งค่าหน้าตาเรียบร้อย'));
 }
 
-async function renderAdminActivitySection(){
+function renderAdminSettingsSection() {
   const area = document.getElementById('adminContentArea');
-  const snap = await db.ref('activities').limitToLast(30).once('value');
-  const logs = snap.val() || {};
-
-  let html = `
+  area.innerHTML = `
     <div class="admin-card">
-      <div class="admin-card-header"><div class="admin-card-title">📜 บันทึกกิจกรรมระบบ (Activity Logs)</div></div>
-      <table class="data-table">
-        <thead>
-          <tr><th>เวลา</th><th>ผู้ทำรายการ</th><th>การกระทำ</th><th>รายละเอียด</th></tr>
-        </thead>
-        <tbody>
+      <div class="admin-card-header">
+        <div class="admin-card-title">⚙️ ตั้งค่าระบบขั้นสูง (System Settings)</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600;">
+          <input type="checkbox" id="settingMaintenance" ${systemSettings.maintenanceMode ? 'checked' : ''}> ปิดปรับปรุงระบบชั่วคราว (Maintenance Mode)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600;">
+          <input type="checkbox" id="settingReadOnly" ${systemSettings.readOnlyMode ? 'checked' : ''}> โหมดอ่านอย่างเดียว (Read-Only Chat)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600;">
+          <input type="checkbox" id="settingPrivateAccess" ${systemSettings.privateAccessOnly ? 'checked' : ''}> โหมดเฉพาะเพื่อนใน Whitelist เท่านั้น (Private Access Only)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600;">
+          <input type="checkbox" id="settingProfanity" ${systemSettings.profanityFilter !== false ? 'checked' : ''}> กรองคำหยาบอัตโนมัติ (Profanity Filter)
+        </label>
+        
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:.85rem;font-weight:600;color:#64748b;">Slow Mode (วินาทีต่อข้อความ):</label>
+          <input type="number" id="settingSlowMode" value="${systemSettings.slowModeSeconds || 0}" min="0" max="60" style="padding:8px;border-radius:8px;border:1px solid #cbd5e1;width:120px;">
+        </div>
+
+        <button class="btn" onclick="saveSystemSettings()">บันทึกการตั้งค่าระบบ</button>
+      </div>
+    </div>
   `;
+}
 
-  if (Object.keys(logs).length === 0) {
-    html += '<tr><td colspan="4" style="text-align:center;color:#888;">ไม่มีประวัติกิจกรรม</td></tr>';
-  } else {
-    Object.keys(logs).reverse().forEach(lKey => {
-      const l = logs[lKey];
-      html += `
-        <tr>
-          <td>${escapeHtml(l.time)}</td>
-          <td><strong>${escapeHtml(l.actor)}</strong></td>
-          <td><span class="status-tag status-offline">${escapeHtml(l.action)}</span></td>
-          <td>${escapeHtml(l.details)}</td>
-        </tr>
-      `;
+function saveSystemSettings() {
+  const maintenanceMode = document.getElementById('settingMaintenance').checked;
+  const readOnlyMode = document.getElementById('settingReadOnly').checked;
+  const privateAccessOnly = document.getElementById('settingPrivateAccess').checked;
+  const profanityFilter = document.getElementById('settingProfanity').checked;
+  const slowModeSeconds = parseInt(document.getElementById('settingSlowMode').value) || 0;
+
+  db.ref('settings/system').set({
+    maintenanceMode,
+    readOnlyMode,
+    privateAccessOnly,
+    profanityFilter,
+    slowModeSeconds
+  }).then(() => showToast('บันทึกการตั้งค่าระบบเรียบร้อย'));
+}
+
+function renderAdminActivitySection() {
+  const area = document.getElementById('adminContentArea');
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">🕒 บันทึกกิจกรรมทั้งหมด (Activity Logs)</div>
+        <button class="btn btn-sm btn-danger" onclick="db.ref('activities').remove(); showToast('ล้าง Activity Logs แล้ว'); renderAdminActivitySection();">ล้าง Logs</button>
+      </div>
+      <div style="max-height:400px;overflow-y:auto;" id="adminFullActivityContainer">กำลังโหลด...</div>
+    </div>
+  `;
+  db.ref('activities').limitToLast(50).once('value', snap => {
+    const container = document.getElementById('adminFullActivityContainer');
+    if (!snap.exists()) {
+      container.innerHTML = '<div style="color:#888;">ไม่มีกิจกรรม</div>';
+      return;
+    }
+    let html = '<ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">';
+    const logs = [];
+    snap.forEach(c => logs.unshift(c.val()));
+    logs.forEach(l => {
+      html += `<li style="background:#f8fafc;padding:8px;border-radius:6px;border:1px solid #e2e8f0;font-size:.85rem;">
+        <span style="color:#64748b;">[${escapeHtml(l.time)}]</span> <strong>${escapeHtml(l.actor)}</strong>: ${escapeHtml(l.action)} - <span style="color:#475569;">${escapeHtml(l.details)}</span>
+      </li>`;
     });
-  }
-
-  html += '</tbody></table></div>';
-  area.innerHTML = html;
+    html += '</ul>';
+    container.innerHTML = html;
+  });
 }
 </script>
 </body>
