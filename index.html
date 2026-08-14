@@ -591,6 +591,10 @@ try {
 auth.onAuthStateChanged((user) => {
   if (user) {
     handleUserSession(user);
+  } else {
+    // ถ้ายังไม่ได้เข้าสู่ระบบ ให้แสดงหน้าเข้าสู่ระบบ Google
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('chatContainer').style.display = 'none';
   }
 });
 
@@ -943,6 +947,34 @@ function initRealtimeListeners(){
       updateReportBadge(openCount);
       if (currentAdminTab === 'reports') renderAdminReportsSection();
     });
+  }
+}
+
+function updateReportBadge(count) {
+  const badge = document.getElementById('reportBadge');
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function applySettings(s) {
+  if (s.title) {
+    document.getElementById('chatTitleHeader').textContent = s.title;
+  }
+  if (s.color) {
+    document.documentElement.style.setProperty('--primary', s.color);
+  }
+  const banner = document.getElementById('pinnedBanner');
+  if (s.banner) {
+    banner.textContent = '📌 ' + s.banner;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
   }
 }
 
@@ -2301,117 +2333,74 @@ function renderAdminSettingsSection(){
 
         <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;">ระบบคัดกรองคำหยาบ (Anti-Profanity Filter)</div>
-            <div style="font-size:.78rem;color:#64748b;">เซ็นเซอร์คำไม่สุภาพเป็น *** โดยอัตโนมัติ</div>
+            <div style="font-weight:700;font-size:.9rem;">เปิดใช้กรองคำหยาบ (Profanity Filter)</div>
+            <div style="font-size:.78rem;color:#64748b;">เซ็นเซอร์คำหยาบอัตโนมัติด้วย ***</div>
           </div>
           <input type="checkbox" id="sysProfanityFilter" ${systemSettings.profanityFilter ? 'checked' : ''} style="width:20px;height:20px;">
         </div>
 
-        <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
-          <div style="font-weight:700;font-size:.9rem;margin-bottom:4px;">โหมดชะลอข้อความ (Slow Mode)</div>
-          <div style="font-size:.78rem;color:#64748b;margin-bottom:8px;">กำหนดวินาทีห้ามส่งข้อความติดๆ กัน (0 = ปิดใช้งาน)</div>
-          <input type="number" id="sysSlowModeSeconds" value="${systemSettings.slowModeSeconds || 0}" min="0" max="60" style="padding:6px;border:1px solid #cbd5e1;border-radius:6px;width:100px;"> วินาที
-        </div>
-
         <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;color:var(--danger);">ปิดปรับปรุงระบบชั่วคราว (Maintenance Mode)</div>
-            <div style="font-size:.78rem;color:#64748b;">เมื่อเปิดอยู่ สมาชิกทั่วไปจะไม่สามารถเข้าใช้งานได้</div>
+            <div style="font-weight:700;font-size:.9rem;">โหมดปิดปรับปรุงระบบ (Maintenance Mode)</div>
+            <div style="font-size:.78rem;color:#64748b;">เด้งเตือนผู้ใช้ที่ไม่ใช่ Admin ทุกคนออกจากแชท</div>
           </div>
           <input type="checkbox" id="sysMaintenanceMode" ${systemSettings.maintenanceMode ? 'checked' : ''} style="width:20px;height:20px;">
         </div>
 
-        <button class="btn" onclick="saveSystemSettingsConfig()"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าระบบ</button>
+        <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-weight:700;font-size:.9rem;margin-bottom:4px;">หน่วงเวลาการส่งข้อความ (Slow Mode)</div>
+          <div style="font-size:.78rem;color:#64748b;margin-bottom:8px;">กำหนดวินาทีขั้นต่ำที่ต้องรอระหว่างส่งข้อความ (0 = ปิด)</div>
+          <input type="number" id="sysSlowModeSeconds" value="${systemSettings.slowModeSeconds || 0}" min="0" max="60" style="padding:8px;border:1px solid #cbd5e1;border-radius:6px;width:100px;"> วินาที
+        </div>
+
+        <button class="btn" onclick="saveSystemSettingsFromAdmin()"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าระบบ</button>
       </div>
     </div>
   `;
 }
 
-function saveSystemSettingsConfig(){
-  const allowNameChange = document.getElementById('sysAllowNameChange').checked;
-  const maintenanceMode = document.getElementById('sysMaintenanceMode').checked;
-  const readOnlyMode = document.getElementById('sysReadOnlyMode').checked;
-  const profanityFilter = document.getElementById('sysProfanityFilter').checked;
-  const privateAccessOnly = document.getElementById('sysPrivateAccessOnly').checked;
-  const slowModeSeconds = parseInt(document.getElementById('sysSlowModeSeconds').value) || 0;
-
-  const newSys = {
-    allowNameChange: allowNameChange,
-    maintenanceMode: maintenanceMode,
-    readOnlyMode: readOnlyMode,
-    profanityFilter: profanityFilter,
-    privateAccessOnly: privateAccessOnly,
-    slowModeSeconds: slowModeSeconds
+function saveSystemSettingsFromAdmin() {
+  const newSettings = {
+    privateAccessOnly: document.getElementById('sysPrivateAccessOnly').checked,
+    allowNameChange: document.getElementById('sysAllowNameChange').checked,
+    readOnlyMode: document.getElementById('sysReadOnlyMode').checked,
+    profanityFilter: document.getElementById('sysProfanityFilter').checked,
+    maintenanceMode: document.getElementById('sysMaintenanceMode').checked,
+    slowModeSeconds: parseInt(document.getElementById('sysSlowModeSeconds').value) || 0
   };
 
-  db.ref('settings/system').set(newSys).then(() => {
-    logActivity(myName, myUid, 'Update System Settings', JSON.stringify(newSys));
-    showToast('บันทึก System Settings เรียบร้อยแล้ว');
+  db.ref('settings/system').set(newSettings).then(() => {
+    logActivity(myName, myUid, 'Update System Settings', 'อัปเดตการตั้งค่าระบบ');
+    showToast('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว');
   });
 }
 
 function renderAdminActivitySection(){
   const area = document.getElementById('adminContentArea');
-  area.innerHTML = `
-    <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:12px;">📜 ACTIVITY LOGS</div>
-      <div style="overflow-x:auto;">
-        <table class="data-table">
-          <thead>
-            <tr><th>เวลา</th><th>ผู้กระทำ</th><th>การกระทำ</th><th>รายละเอียด</th></tr>
-          </thead>
-          <tbody id="activityTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  db.ref('activities').limitToLast(30).once('value', snap => {
-    const tbody = document.getElementById('activityTableBody');
+  area.innerHTML = '<div class="admin-card"><div class="admin-card-title" style="margin-bottom:12px;">📜 บันทึกกิจกรรมในระบบ (System Activity Logs)</div><div id="fullActivityLogList">กำลังโหลด...</div></div>';
+  
+  db.ref('activities').limitToLast(50).once('value', snap => {
+    const container = document.getElementById('fullActivityLogList');
     if (!snap.exists()) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">ไม่มีบันทึกกิจกรรม</td></tr>';
+      container.innerHTML = '<p style="color:#888;">ไม่มีบันทึกกิจกรรม</p>';
       return;
     }
+    let html = '<ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">';
     const logs = [];
-    snap.forEach(c => { logs.unshift(c.val()); });
+    snap.forEach(c => logs.unshift(c.val()));
     logs.forEach(l => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${escapeHtml(l.time)}</td>
-        <td><strong>${escapeHtml(l.actor)}</strong></td>
-        <td><span class="status-tag status-online">${escapeHtml(l.action)}</span></td>
-        <td>${escapeHtml(l.details)}</td>
+      html += `
+        <li style="font-size:.85rem;padding:8px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+          <span style="color:#64748b;font-weight:600;">[${escapeHtml(l.time)}]</span>
+          <strong style="color:var(--primary-dark);">${escapeHtml(l.actor)}</strong> 
+          <span class="status-tag status-offline" style="margin:0 4px;">${escapeHtml(l.action)}</span>
+          <span>${escapeHtml(l.details)}</span>
+        </li>
       `;
-      tbody.appendChild(tr);
     });
+    html += '</ul>';
+    container.innerHTML = html;
   });
-}
-
-function updateReportBadge(count){
-  const badge = document.getElementById('reportBadge');
-  if (!badge) return;
-  badge.style.display = count > 0 ? 'inline-block' : 'none';
-  badge.textContent = count;
-}
-
-function applySettings(s){
-  const title = s.title || 'FriendHub Chat';
-  const chatTitle = document.getElementById('chatTitleHeader');
-  if (chatTitle) chatTitle.textContent = title;
-
-  if (s.color) {
-    document.documentElement.style.setProperty('--primary', s.color);
-  }
-
-  const pinnedBanner = document.getElementById('pinnedBanner');
-  if (pinnedBanner) {
-    if (s.banner) {
-      pinnedBanner.textContent = '📌 ' + s.banner;
-      pinnedBanner.style.display = 'block';
-    } else {
-      pinnedBanner.style.display = 'none';
-    }
-  }
 }
 </script>
 </body>
