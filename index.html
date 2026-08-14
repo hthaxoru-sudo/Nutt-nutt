@@ -2214,22 +2214,32 @@ function renderAdminShortcutsSection(){
   `;
 
   const tbody = document.getElementById('shortcutsTableBody');
-  if (Object.keys(shortcutsCache).length === 0) {
+  if (!tbody) return;
+
+  const keys = Object.keys(shortcutsCache);
+  if (keys.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">ยังไม่มี Shortcut</td></tr>';
     return;
   }
 
-  Object.keys(shortcutsCache).forEach(key => {
+  tbody.innerHTML = '';
+  keys.forEach(key => {
     const s = shortcutsCache[key];
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${escapeHtml(s.icon) || '🔗'}</td>
+      <td style="font-size:1.2rem;text-align:center;">${escapeHtml(s.icon || '🔗')}</td>
       <td><strong>${escapeHtml(s.name)}</strong></td>
-      <td><a href="${escapeHtml(s.url)}" target="_blank" style="color:var(--primary);">${escapeHtml(s.url)}</a></td>
-      <td><span class="status-tag ${s.enabled ? 'status-online' : 'status-offline'}">${s.enabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}</span></td>
+      <td><a href="${escapeHtml(s.url)}" target="_blank" style="color:var(--primary);text-decoration:underline;font-size:.82rem;">${escapeHtml(s.url)}</a></td>
+      <td>
+        <span class="status-tag ${s.enabled ? 'status-online' : 'status-offline'}">
+          ${s.enabled ? '🟢 แสดงผล' : '⚪ ซ่อน'}
+        </span>
+      </td>
       <td>
         <div class="row" style="gap:4px;">
-          <button class="btn btn-sm btn-secondary" onclick="toggleShortcutEnabled('${key}', ${!s.enabled})">${s.enabled ? 'ปิด' : 'เปิด'}</button>
+          <button class="btn btn-sm ${s.enabled ? 'btn-warning' : 'btn-sm'}" onclick="toggleShortcutState('${key}', ${!s.enabled})">
+            ${s.enabled ? 'ซ่อน' : 'แสดง'}
+          </button>
           <button class="btn btn-sm btn-danger" onclick="deleteShortcut('${key}')">ลบ</button>
         </div>
       </td>
@@ -2238,168 +2248,207 @@ function renderAdminShortcutsSection(){
   });
 }
 
-function openAddShortcutPrompt(){
-  const name = prompt('ชื่อ Shortcut (เช่น YouTube):');
+function openAddShortcutPrompt() {
+  const name = prompt('ระบุชื่อเมนูลัด (เช่น Google Drive, Canva):');
   if (!name) return;
-  const url = prompt('URL ลิงก์ (เช่น https://youtube.com):');
+  const url = prompt('ระบุ URL ลิงก์ปลายทาง (รวม http:// หรือ https://):');
   if (!url) return;
-  const icon = prompt('ไอคอน หรือ Emoji (เช่น 🔴 หรือ <i class="fa-brands fa-youtube"></i>):', '🔗');
+  const icon = prompt('ระบุข้อความหรือ Emoji ไอคอน (เช่น 📁, 🎨, 📌):', '🔗');
 
   db.ref('shortcuts').push({
-    name: name,
-    url: url,
-    icon: icon || '🔗',
-    enabled: true
+    name: name.trim(),
+    url: url.trim(),
+    icon: icon ? icon.trim() : '🔗',
+    enabled: true,
+    createdAt: new Date().toLocaleString('th-TH')
   }).then(() => {
     logActivity(myName, myUid, 'Add Shortcut', name);
-    showToast('เพิ่ม Shortcut เรียบร้อย');
+    showToast('เพิ่ม Shortcut เรียบร้อยแล้ว');
   });
 }
 
-function toggleShortcutEnabled(key, state){
-  db.ref(`shortcuts/${key}/enabled`).set(state);
+function toggleShortcutState(key, enabledState) {
+  db.ref(`shortcuts/${key}/enabled`).set(enabledState).then(() => {
+    showToast(enabledState ? 'เปิดแสดง Shortcut แล้ว' : 'ซ่อน Shortcut แล้ว');
+  });
 }
 
-function deleteShortcut(key){
-  if (confirm('ลบ Shortcut นี้?')) db.ref(`shortcuts/${key}`).remove();
+function deleteShortcut(key) {
+  if (confirm('ต้องการลบ Shortcut นี้ใช่หรือไม่?')) {
+    db.ref(`shortcuts/${key}`).remove().then(() => {
+      showToast('ลบ Shortcut เรียบร้อยแล้ว');
+    });
+  }
 }
 
-function renderAdminAppearanceSection(){
+function renderAdminAppearanceSection() {
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
     <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:12px;">🎨 ปรับแต่งธีมและชื่อระบบ</div>
-      <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
+      <div class="admin-card-title" style="margin-bottom:12px;"><i class="fa-solid fa-palette"></i> ตกแต่งธีมและโทนสีระบบ</div>
+      
+      <div style="display:flex;flex-direction:column;gap:14px;max-width:400px;text-align:left;">
         <div>
-          <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:4px;">ชื่อห้องแชท</label>
-          <input type="text" id="adminSettingTitle" placeholder="FriendHub Chat" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;">
+          <label style="font-size:.85rem;font-weight:600;color:#475569;">เลือกโทนสีหลักของแอปพลิเคชัน (Primary Color):</label>
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <input type="color" id="themeColorPicker" value="#4b6ef5" style="width:60px;height:38px;padding:2px;border-radius:8px;cursor:pointer;">
+            <button class="btn" onclick="saveThemeColor()">ปรับใช้สีนี้</button>
+          </div>
         </div>
+
+        <hr style="border-color:#e2e8f0;margin:4px 0;">
+
         <div>
-          <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:4px;">สีหลักของธีม</label>
-          <input type="color" id="adminSettingColor" value="#4b6ef5" style="height:40px;width:100%;border:none;cursor:pointer;">
+          <label style="font-size:.85rem;font-weight:600;color:#475569;">ชื่อแอปพลิเคชันบน Header:</label>
+          <div class="row" style="margin-top:8px;">
+            <input type="text" id="appTitleInput" placeholder="FriendHub Cloud Chat" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;flex:1;">
+            <button class="btn" onclick="saveAppTitle()">บันทึกชื่อแอป</button>
+          </div>
         </div>
-        <button class="btn" onclick="saveAdminAppearance()">💾 บันทึกธีม</button>
       </div>
     </div>
   `;
 
-  db.ref('settings').once('value').then(snap => {
+  db.ref('settings').once('value', snap => {
     const s = snap.val() || {};
-    if (s.title) document.getElementById('adminSettingTitle').value = s.title;
-    if (s.color) document.getElementById('adminSettingColor').value = s.color;
+    if (s.color) document.getElementById('themeColorPicker').value = s.color;
+    if (s.title) document.getElementById('appTitleInput').value = s.title;
   });
 }
 
-function saveAdminAppearance(){
-  const title = document.getElementById('adminSettingTitle').value.trim();
-  const color = document.getElementById('adminSettingColor').value;
-  db.ref('settings/title').set(title);
-  db.ref('settings/color').set(color).then(() => {
-    logActivity(myName, myUid, 'Theme Update', `Title: ${title}, Color: ${color}`);
-    showToast('บันทึกการตั้งค่าธีมเรียบร้อยแล้ว');
+function saveThemeColor() {
+  const hex = document.getElementById('themeColorPicker').value;
+  db.ref('settings/color').set(hex).then(() => {
+    showToast('อัปเดตสีธีมระบบเรียบร้อยแล้ว');
   });
 }
 
-function renderAdminSettingsSection(){
+function saveAppTitle() {
+  const title = document.getElementById('appTitleInput').value.trim();
+  if (!title) return alert('กรุณากรอกชื่อระบบ');
+  db.ref('settings/title').set(title).then(() => {
+    showToast('เปลี่ยนชื่อระบบเรียบร้อยแล้ว');
+  });
+}
+
+function renderAdminSettingsSection() {
   const area = document.getElementById('adminContentArea');
   area.innerHTML = `
     <div class="admin-card">
-      <div class="admin-card-title" style="margin-bottom:16px;"><i class="fa-solid fa-sliders"></i> SYSTEM SETTINGS (ตั้งค่าระบบจริง)</div>
-      <div style="display:flex;flex-direction:column;gap:16px;max-width:500px;">
+      <div class="admin-card-title" style="margin-bottom:16px;"><i class="fa-solid fa-gears"></i> การตั้งค่าสิทธิ์และความปลอดภัยระบบ</div>
+      
+      <div style="display:flex;flex-direction:column;gap:16px;text-align:left;max-width:550px;">
         
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+        <label style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;color:var(--primary-dark);">🔐 ระบบเฉพาะเพื่อนที่อนุญาตเท่านั้น (Private Access Only)</div>
-            <div style="font-size:.78rem;color:#64748b;">เฉพาะบัญชีที่มี Email อยู่ใน Whitelist เท่านั้นที่จะเข้าใช้งานได้</div>
+            <div style="font-weight:700;font-size:.9rem;color:#1e293b;">โหมดเฉพาะเพื่อนเท่านั้น (Private Access Only)</div>
+            <div style="font-size:.78rem;color:#64748b;">เฉพาะ Email ที่อยู่ใน Whitelist เท่านั้นที่เข้าใช้งานได้</div>
           </div>
-          <input type="checkbox" id="sysPrivateAccessOnly" ${systemSettings.privateAccessOnly ? 'checked' : ''} style="width:20px;height:20px;">
-        </div>
+          <input type="checkbox" id="sysPrivateAccessToggle" onchange="updateSystemSetting('privateAccessOnly', this.checked)" style="width:18px;height:18px;cursor:pointer;">
+        </label>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+        <label style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;">อนุญาตให้ผู้ใช้เปลี่ยนชื่อตนเอง</div>
-            <div style="font-size:.78rem;color:#64748b;">เปิด/ปิด การกดเปลี่ยนชื่อที่แท็กผู้ใช้</div>
+            <div style="font-weight:700;font-size:.9rem;color:#1e293b;">โหมดปิดปรับปรุงชั่วคราว (Maintenance Mode)</div>
+            <div style="font-size:.78rem;color:#64748b;">ตัดการเชื่อมต่อผู้ใช้ทั่วไปคงเหลือเฉพาะ Admin</div>
           </div>
-          <input type="checkbox" id="sysAllowNameChange" ${systemSettings.allowNameChange ? 'checked' : ''} style="width:20px;height:20px;">
-        </div>
+          <input type="checkbox" id="sysMaintenanceToggle" onchange="updateSystemSetting('maintenanceMode', this.checked)" style="width:18px;height:18px;cursor:pointer;">
+        </label>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+        <label style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;">โหมดประกาศอ่านอย่างเดียว (Read-Only Mode)</div>
-            <div style="font-size:.78rem;color:#64748b;">เฉพาะ Admin เท่านั้นที่ส่งข้อความในช่องหลักได้</div>
+            <div style="font-weight:700;font-size:.9rem;color:#1e293b;">โหมดอ่านอย่างเดียว (Read-Only Mode)</div>
+            <div style="font-size:.78rem;color:#64748b;">ไม่อนุญาตให้เพื่อนส่งข้อความในช่องทางรวม</div>
           </div>
-          <input type="checkbox" id="sysReadOnlyMode" ${systemSettings.readOnlyMode ? 'checked' : ''} style="width:20px;height:20px;">
-        </div>
+          <input type="checkbox" id="sysReadOnlyToggle" onchange="updateSystemSetting('readOnlyMode', this.checked)" style="width:18px;height:18px;cursor:pointer;">
+        </label>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
+        <label style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;">
           <div>
-            <div style="font-weight:700;font-size:.9rem;">เปิดใช้กรองคำหยาบ (Profanity Filter)</div>
-            <div style="font-size:.78rem;color:#64748b;">เซ็นเซอร์คำหยาบอัตโนมัติด้วย ***</div>
+            <div style="font-weight:700;font-size:.9rem;color:#1e293b;">ตัวกรองคำนับ / คำไม่สุภาพ (Profanity Filter)</div>
+            <div style="font-size:.78rem;color:#64748b;">แปลงคำหยาบคายเป็น *** โดยอัตโนมัติ</div>
           </div>
-          <input type="checkbox" id="sysProfanityFilter" ${systemSettings.profanityFilter ? 'checked' : ''} style="width:20px;height:20px;">
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
-          <div>
-            <div style="font-weight:700;font-size:.9rem;">โหมดปิดปรับปรุงระบบ (Maintenance Mode)</div>
-            <div style="font-size:.78rem;color:#64748b;">เด้งเตือนผู้ใช้ที่ไม่ใช่ Admin ทุกคนออกจากแชท</div>
-          </div>
-          <input type="checkbox" id="sysMaintenanceMode" ${systemSettings.maintenanceMode ? 'checked' : ''} style="width:20px;height:20px;">
-        </div>
+          <input type="checkbox" id="sysProfanityToggle" onchange="updateSystemSetting('profanityFilter', this.checked)" style="width:18px;height:18px;cursor:pointer;">
+        </label>
 
         <div style="background:#f8fafc;padding:12px;border-radius:10px;border:1px solid #e2e8f0;">
-          <div style="font-weight:700;font-size:.9rem;margin-bottom:4px;">หน่วงเวลาการส่งข้อความ (Slow Mode)</div>
-          <div style="font-size:.78rem;color:#64748b;margin-bottom:8px;">กำหนดวินาทีขั้นต่ำที่ต้องรอระหว่างส่งข้อความ (0 = ปิด)</div>
-          <input type="number" id="sysSlowModeSeconds" value="${systemSettings.slowModeSeconds || 0}" min="0" max="60" style="padding:8px;border:1px solid #cbd5e1;border-radius:6px;width:100px;"> วินาที
+          <div style="font-weight:700;font-size:.9rem;color:#1e293b;margin-bottom:4px;">ชะลอการส่งข้อความ (Slow Mode):</div>
+          <div style="font-size:.78rem;color:#64748b;margin-bottom:8px;">กำหนดระยะเวลารอระหว่างส่งแต่ละข้อความ (วินาที)</div>
+          <div class="row">
+            <input type="number" id="sysSlowModeInput" min="0" max="60" placeholder="0 = ปิดใช้งาน" style="padding:8px;border:1px solid #cbd5e1;border-radius:8px;width:120px;">
+            <button class="btn btn-sm" onclick="saveSlowModeSetting()">ตั้งเวลา</button>
+          </div>
         </div>
 
-        <button class="btn" onclick="saveSystemSettingsFromAdmin()"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าระบบ</button>
       </div>
     </div>
   `;
+
+  document.getElementById('sysPrivateAccessToggle').checked = !!systemSettings.privateAccessOnly;
+  document.getElementById('sysMaintenanceToggle').checked = !!systemSettings.maintenanceMode;
+  document.getElementById('sysReadOnlyToggle').checked = !!systemSettings.readOnlyMode;
+  document.getElementById('sysProfanityToggle').checked = systemSettings.profanityFilter !== false;
+  document.getElementById('sysSlowModeInput').value = systemSettings.slowModeSeconds || 0;
 }
 
-function saveSystemSettingsFromAdmin() {
-  const newSettings = {
-    privateAccessOnly: document.getElementById('sysPrivateAccessOnly').checked,
-    allowNameChange: document.getElementById('sysAllowNameChange').checked,
-    readOnlyMode: document.getElementById('sysReadOnlyMode').checked,
-    profanityFilter: document.getElementById('sysProfanityFilter').checked,
-    maintenanceMode: document.getElementById('sysMaintenanceMode').checked,
-    slowModeSeconds: parseInt(document.getElementById('sysSlowModeSeconds').value) || 0
-  };
-
-  db.ref('settings/system').set(newSettings).then(() => {
-    logActivity(myName, myUid, 'Update System Settings', 'อัปเดตการตั้งค่าระบบ');
-    showToast('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว');
+function updateSystemSetting(key, val) {
+  db.ref(`settings/system/${key}`).set(val).then(() => {
+    logActivity(myName, myUid, 'Update Setting', `${key} = ${val}`);
+    showToast('ปรับปรุงการตั้งค่าระบบเรียบร้อยแล้ว');
   });
 }
 
-function renderAdminActivitySection(){
+function saveSlowModeSetting() {
+  const sec = parseInt(document.getElementById('sysSlowModeInput').value) || 0;
+  db.ref('settings/system/slowModeSeconds').set(sec).then(() => {
+    showToast(`ตั้งเวลา Slow Mode เป็น ${sec} วินาทีเรียบร้อยแล้ว`);
+  });
+}
+
+function renderAdminActivitySection() {
   const area = document.getElementById('adminContentArea');
-  area.innerHTML = '<div class="admin-card"><div class="admin-card-title" style="margin-bottom:12px;">📜 บันทึกกิจกรรมในระบบ (System Activity Logs)</div><div id="fullActivityLogList">กำลังโหลด...</div></div>';
-  
+  area.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title"><i class="fa-solid fa-clock-rotate-left"></i> ประวัติการทำรายการในระบบทั้งหมด (Activity Audit Logs)</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>ผู้กระทำ</th>
+              <th>การกระทำ (Action)</th>
+              <th>รายละเอียด (Details)</th>
+            </tr>
+          </thead>
+          <tbody id="fullActivityTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
   db.ref('activities').limitToLast(50).once('value', snap => {
-    const container = document.getElementById('fullActivityLogList');
+    const tbody = document.getElementById('fullActivityTableBody');
+    if (!tbody) return;
     if (!snap.exists()) {
-      container.innerHTML = '<p style="color:#888;">ไม่มีบันทึกกิจกรรม</p>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">ไม่มีประวัติกิจกรรม</td></tr>';
       return;
     }
-    let html = '<ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">';
     const logs = [];
-    snap.forEach(c => logs.unshift(c.val()));
+    snap.forEach(c => { logs.unshift(c.val()); });
+    
+    tbody.innerHTML = '';
     logs.forEach(l => {
-      html += `
-        <li style="font-size:.85rem;padding:8px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
-          <span style="color:#64748b;font-weight:600;">[${escapeHtml(l.time)}]</span>
-          <strong style="color:var(--primary-dark);">${escapeHtml(l.actor)}</strong> 
-          <span class="status-tag status-offline" style="margin:0 4px;">${escapeHtml(l.action)}</span>
-          <span>${escapeHtml(l.details)}</span>
-        </li>
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="white-space:nowrap;font-size:.78rem;color:#64748b;">${escapeHtml(l.time || '')}</td>
+        <td><strong>${escapeHtml(l.actor || 'System')}</strong> <br><code style="font-size:.7rem;color:#888;">${escapeHtml(l.uid || '')}</code></td>
+        <td><span class="status-tag status-online" style="background:#e0e7ff;color:var(--primary-dark);">${escapeHtml(l.action)}</span></td>
+        <td style="font-size:.85rem;color:#334155;">${escapeHtml(l.details)}</td>
       `;
+      tbody.appendChild(tr);
     });
-    html += '</ul>';
-    container.innerHTML = html;
   });
 }
 </script>
